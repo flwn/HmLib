@@ -5,92 +5,26 @@ using System.Text;
 
 namespace HmLib.Binary
 {
-    public class HmBinaryReader : BinaryReader
+    public class HmBinaryReader
     {
-        private class ReadCounterStream : Stream
-        {
-            private readonly Stream _wrappingStream;
-
-            public long BytesRead { get; private set; }
-
-            public ReadCounterStream(Stream wrappingStream)
-            {
-                _wrappingStream = wrappingStream;
-            }
-
-            public override void Flush()
-            {
-                _wrappingStream.Flush();
-            }
-
-            public override long Seek(long offset, SeekOrigin origin)
-            {
-                return _wrappingStream.Seek(offset, origin);
-            }
-
-            public override void SetLength(long value)
-            {
-                _wrappingStream.SetLength(value);
-            }
-
-            public override int Read(byte[] buffer, int offset, int count)
-            {
-                BytesRead += count;
-                return _wrappingStream.Read(buffer, offset, count);
-            }
-
-            public override void Write(byte[] buffer, int offset, int count)
-            {
-                _wrappingStream.Write(buffer, offset, count);
-            }
-
-            public override bool CanRead
-            {
-                get { return _wrappingStream.CanRead; }
-            }
-
-            public override bool CanSeek
-            {
-                get { return _wrappingStream.CanSeek; }
-            }
-
-            public override bool CanWrite
-            {
-                get { return _wrappingStream.CanWrite; }
-            }
-
-            public override long Length
-            {
-                get { return _wrappingStream.Length; }
-            }
-
-            public override long Position
-            {
-                get { return _wrappingStream.Position; }
-                set { _wrappingStream.Position = value; }
-            }
-        }
-
-        private const byte TrueByte = 0x01;
-        private const byte FalseByte = 0x00;
-
+        private long _bytesRead = 0L;
 
         private static readonly Encoding Engcoding = Encoding.ASCII;
+        private Stream _input;
 
         public HmBinaryReader(Stream input, bool leaveOpen = true)
-            : base(new ReadCounterStream(input), Encoding.ASCII, leaveOpen)
         {
+            _input = input;
         }
 
 
-        public override int ReadInt32()
+        public int ReadInt32()
         {
-            var result = base.ReadInt32();
-
-            return IPAddress.NetworkToHostOrder(result);
+            var intBuffer = ReadBytes(4);
+            return HmBitConverter.ToInt32(intBuffer);
         }
 
-        public override string ReadString()
+        public string ReadString()
         {
             var stringLength = ReadInt32();
 
@@ -100,43 +34,45 @@ namespace HmLib.Binary
             }
 
             var stringBytes = ReadBytes(stringLength);
-
+          
             var stringValue = Engcoding.GetString(stringBytes);
 
             return stringValue;
         }
 
 
-        public override double ReadDouble()
+        public double ReadDouble()
         {
-            var mantissa = (double)ReadInt32();
-            var exponent = (double)ReadInt32();
-
-            var floatValue = mantissa / (double)0x40000000;
-            floatValue *= Math.Pow(2, exponent);
-            return floatValue;
+            var doubleBytes = ReadBytes(8);
+            return HmBitConverter.ToDouble(doubleBytes);
         }
 
-        public override bool ReadBoolean()
+        public bool ReadBoolean()
         {
-            var booleanByte = ReadByte();
+            var booleanByte = ReadBytes(1);
 
-            if (booleanByte == TrueByte)
+            return HmBitConverter.ToBoolean(booleanByte, 0);
+        }
+
+        public byte ReadByte()
+        {
+            _bytesRead++;
+            return (byte)_input.ReadByte();
+        }
+
+        public byte[] ReadBytes(int count)
+        {
+
+            var buffer = new byte[count];
+            var read = _input.Read(buffer, 0, count);
+            _bytesRead += read;
+            if (read != count)
             {
-                return true;
+                throw new InvalidOperationException("");
             }
-            if (booleanByte == FalseByte)
-            {
-                return false;
-            }
-            throw new InvalidOperationException();
+            return buffer;
         }
 
-        public override float ReadSingle()
-        {
-            throw new InvalidOperationException("Use ReadDouble.");
-        }
-
-        public long BytesRead { get { return ((ReadCounterStream)BaseStream).BytesRead; } }
+        public long BytesRead { get { return _bytesRead; } }
     }
 }

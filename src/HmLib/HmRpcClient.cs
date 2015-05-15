@@ -179,7 +179,7 @@ namespace HmLib
 
         }
 
-        private void ReadResponse(BinaryReader reader, StringBuilder builder)
+        private void ReadResponse(HmBinaryReader reader, StringBuilder builder)
         {
             var type = (ContentType)reader.ReadInt32();
 
@@ -211,7 +211,7 @@ namespace HmLib
             }
         }
 
-        private void ReadStruct(BinaryReader reader, StringBuilder builder)
+        private void ReadStruct(HmBinaryReader reader, StringBuilder builder)
         {
             var elementCount = reader.ReadInt32();
             builder.Append("{");
@@ -233,7 +233,7 @@ namespace HmLib
             builder.Append("}");
         }
 
-        private void ReadArray(BinaryReader reader, StringBuilder builder)
+        private void ReadArray(HmBinaryReader reader, StringBuilder builder)
         {
             var itemCount = reader.ReadInt32();
 
@@ -250,7 +250,7 @@ namespace HmLib
             builder.Append("]");
         }
 
-        private void ReadBase64(BinaryReader reader, StringBuilder builder)
+        private void ReadBase64(HmBinaryReader reader, StringBuilder builder)
         {
             var base64 = reader.ReadString();
             builder.Append("\"base64,");
@@ -258,7 +258,7 @@ namespace HmLib
             builder.Append('"');
         }
 
-        private void ReadFloat(BinaryReader reader, StringBuilder builder)
+        private void ReadFloat(HmBinaryReader reader, StringBuilder builder)
         {
             var floatValue = reader.ReadDouble();
 
@@ -266,7 +266,7 @@ namespace HmLib
         }
 
 
-        private void ReadString(BinaryReader reader, StringBuilder builder)
+        private void ReadString(HmBinaryReader reader, StringBuilder builder)
         {
             var stringValue = reader.ReadString();
 
@@ -275,14 +275,14 @@ namespace HmLib
             builder.Append('"');
         }
 
-        private void ReadInt(BinaryReader reader, StringBuilder builder)
+        private void ReadInt(HmBinaryReader reader, StringBuilder builder)
         {
             var number = reader.ReadInt32();
             builder.Append(number);
         }
 
 
-        private void ReadBoolean(BinaryReader reader, StringBuilder builder)
+        private void ReadBoolean(HmBinaryReader reader, StringBuilder builder)
         {
             var boolean = reader.ReadBoolean();
             builder.Append(boolean);

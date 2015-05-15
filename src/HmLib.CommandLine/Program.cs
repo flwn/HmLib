@@ -15,6 +15,8 @@ namespace HmLib.CommandLine
     {
         public void Main(string[] args)
         {
+            Test().Wait();
+
         }
         public static async Task Test()
         {
