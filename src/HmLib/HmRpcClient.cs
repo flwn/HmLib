@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -148,9 +147,9 @@ namespace HmLib
                     var responseLength = reader.ReadInt32();
 
 
-                    var responseContent = new StringBuilder();
+                    var responseContent = new JsonObjectBuilder();
                     ReadResponse(reader, responseContent);
-
+                    
 
                     var response = new Response
                     {
@@ -179,7 +178,7 @@ namespace HmLib
 
         }
 
-        private void ReadResponse(HmBinaryReader reader, StringBuilder builder)
+        private void ReadResponse(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var type = (ContentType)reader.ReadInt32();
 
@@ -211,81 +210,70 @@ namespace HmLib
             }
         }
 
-        private void ReadStruct(HmBinaryReader reader, StringBuilder builder)
+        private void ReadStruct(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var elementCount = reader.ReadInt32();
-            builder.Append("{");
+                        builder.BeginStruct();
 
             for (; elementCount > 0; elementCount--)
             {
-                ReadString(reader, builder);
+                builder.BeginItem();
 
-                builder.Append(":");
-
+                var propertyName = reader.ReadString();
+                builder.WritePropertyName(propertyName);
+                
                 ReadResponse(reader, builder);
 
-                if (elementCount > 1)
-                {
-                    builder.Append(',');
-                }
+                builder.EndItem();
             }
 
-            builder.Append("}");
+            builder.EndStruct();
         }
 
-        private void ReadArray(HmBinaryReader reader, StringBuilder builder)
+        private void ReadArray(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var itemCount = reader.ReadInt32();
-
-            builder.Append("[");
+            
+            builder.BeginArray();
             for (; itemCount > 0; itemCount--)
             {
                 ReadResponse(reader, builder);
-
-                if (itemCount > 1)
-                {
-                    builder.Append(",");
-                }
             }
-            builder.Append("]");
+            builder.EndArray();
         }
 
-        private void ReadBase64(HmBinaryReader reader, StringBuilder builder)
+        private void ReadBase64(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var base64 = reader.ReadString();
-            builder.Append("\"base64,");
-            builder.Append(base64);
-            builder.Append('"');
+            builder.WriteBase64String(base64);
         }
 
-        private void ReadFloat(HmBinaryReader reader, StringBuilder builder)
+        private void ReadFloat(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var floatValue = reader.ReadDouble();
 
-            builder.Append(floatValue);
+            builder.WriteDoubleValue(floatValue);
         }
 
 
-        private void ReadString(HmBinaryReader reader, StringBuilder builder)
+        private void ReadString(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var stringValue = reader.ReadString();
 
-            builder.Append('"');
-            builder.Append(stringValue);
-            builder.Append('"');
+            builder.WriteStringValue(stringValue);
         }
 
-        private void ReadInt(HmBinaryReader reader, StringBuilder builder)
+        private void ReadInt(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var number = reader.ReadInt32();
-            builder.Append(number);
+            builder.WriteInt32Value(number);
         }
 
 
-        private void ReadBoolean(HmBinaryReader reader, StringBuilder builder)
+        private void ReadBoolean(HmBinaryReader reader, JsonObjectBuilder builder)
         {
             var boolean = reader.ReadBoolean();
-            builder.Append(boolean);
+            builder.WriteBooleanValue(boolean);
         }
 
 
