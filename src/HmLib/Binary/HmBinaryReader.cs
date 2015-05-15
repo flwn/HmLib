@@ -1,15 +1,14 @@
 using System;
 using System.IO;
-using System.Net;
 using System.Text;
 
 namespace HmLib.Binary
 {
     public class HmBinaryReader
     {
-        private long _bytesRead = 0L;
+        private static readonly Encoding Encoding = Encoding.ASCII;
 
-        private static readonly Encoding Engcoding = Encoding.ASCII;
+        private long _bytesRead = 0L;
         private Stream _input;
 
         public HmBinaryReader(Stream input, bool leaveOpen = true)
@@ -35,7 +34,7 @@ namespace HmLib.Binary
 
             var stringBytes = ReadBytes(stringLength);
           
-            var stringValue = Engcoding.GetString(stringBytes);
+            var stringValue = Encoding.GetString(stringBytes);
 
             return stringValue;
         }

@@ -4,14 +4,13 @@ using System.IO;
 
 namespace HmLib
 {
-    public class JsonObjectBuilder
+    public class JsonObjectBuilder : IObjectBuilder
     {
 
-        private TextWriter _writer = new StringWriter();
+        private readonly TextWriter _writer = new StringWriter();
 
         private const char Quote = '"';
-
-        //cannot use Stack<T> here because ObjectBuilderState is a value type
+        
         private Stack<BuilderState> _state = new Stack<BuilderState>(4);
 
         private List<bool> _objectState = new List<bool>(4);
@@ -31,51 +30,41 @@ namespace HmLib
             Push(BuilderState.Start);
         }
 
-        internal void BeginStruct()
+        public void BeginStruct()
         {
             Push(BuilderState.Struct);
+
             _writer.Write("{");
         }
 
-        internal void EndStruct()
+        public void EndStruct()
         {
-            var state = Pop();
-            if (state != BuilderState.Struct)
-            {
-                throw new InvalidOperationException("");
-            }
+            Pop(BuilderState.Struct);
+
             _writer.Write("}");
         }
-        internal void BeginArray()
+        public void BeginArray()
         {
             Push(BuilderState.Array);
 
             _writer.Write("[");
         }
 
-        internal void EndArray()
+        public void EndArray()
         {
-            var state = Pop();
-            if (state != BuilderState.Array)
-            {
-                throw new InvalidOperationException("");
-            }
+            Pop(BuilderState.Array);
+
             _writer.Write("]");
         }
 
-        internal void WriteItemSeparation()
-        {
-            _writer.Write(",");
-        }
-
-        internal void BeginItem()
+        public void BeginItem()
         {
             var idx = _state.Count - 1;
 
             var currentState = Peek();
             if (currentState != BuilderState.Struct && currentState != BuilderState.Array)
             {
-                throw new InvalidOperationException("");
+                throw new InvalidOperationException("Invalid state.");
             }
 
             if (_objectState[_objectState.Count - 1])
@@ -90,20 +79,16 @@ namespace HmLib
             Push(BuilderState.Item);
         }
 
-        internal void EndItem()
+        public void EndItem()
         {
-            var currentState = Pop();
-            if (currentState != BuilderState.Item)
-            {
-                throw new InvalidOperationException("");
-            }
+            Pop(BuilderState.Item);
         }
 
-        internal void WritePropertyName(string name)
+        public void WritePropertyName(string name)
         {
             if (Peek() != BuilderState.Item)
             {
-                throw new InvalidOperationException("");
+                throw new InvalidOperationException("Invalid state.");
             }
 
             _writer.Write(Quote);
@@ -111,10 +96,55 @@ namespace HmLib
             _writer.Write(Quote);
             _writer.Write(":");
         }
+        
 
-
-        private BuilderState Pop()
+        public void WriteStringValue(string value)
         {
+            _writer.Write(Quote);
+            _writer.Write(value);
+            _writer.Write(Quote);
+        }
+
+        public void WriteBase64String(string base64String)
+        {
+            _writer.Write("\"base64,");
+            _writer.Write(base64String);
+            _writer.Write('"');
+        }
+
+        public void WriteInt32Value(int value)
+        {
+            _writer.Write(value);
+        }
+
+        public void WriteDoubleValue(double value)
+        {
+            _writer.Write(value);
+        }
+
+        public void WriteBooleanValue(bool value)
+        {
+            _writer.Write(value);
+        }
+
+        public override string ToString()
+        {
+            return _writer.ToString();
+        }
+
+        private void WriteItemSeparation()
+        {
+            _writer.Write(",");
+        }
+
+
+        private BuilderState Pop(BuilderState expectedState)
+        {
+            if (Peek() != expectedState)
+            {
+                throw new InvalidOperationException("Invalid state.");
+            }
+
             var lastState = _state.Pop();
 
             if (lastState == BuilderState.Array || lastState == BuilderState.Struct)
@@ -130,7 +160,7 @@ namespace HmLib
         {
             if (_state.Count == 0)
             {
-                throw new InvalidOperationException("Invalid state");
+                throw new InvalidOperationException("Invalid state.");
             }
             return _state.Peek();
         }
@@ -142,40 +172,6 @@ namespace HmLib
                 _objectState.Add(false);
             }
             _state.Push(state);
-        }
-
-        internal void WriteStringValue(string stringValue)
-        {
-            _writer.Write(Quote);
-            _writer.Write(stringValue);
-            _writer.Write(Quote);
-        }
-
-        internal void WriteBase64String(string base64String)
-        {
-            _writer.Write("\"base64,");
-            _writer.Write(base64String);
-            _writer.Write('"');
-        }
-
-        internal void WriteInt32Value(int value)
-        {
-            _writer.Write(value);
-        }
-
-        internal void WriteDoubleValue(double value)
-        {
-            _writer.Write(value);
-        }
-
-        internal void WriteBooleanValue(bool value)
-        {
-            _writer.Write(value);
-        }
-
-        public override string ToString()
-        {
-            return _writer.ToString();
         }
     }
 }

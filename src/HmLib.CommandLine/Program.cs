@@ -20,16 +20,7 @@ namespace HmLib.CommandLine
         }
         public static async Task Test()
         {
-            var request = new HmRpcClient.Request()
-            {
-                //Content = "system.listMethods"
-                Method = "system.methodHelp",
-                Parameters = { "system.listMethods" }
-            };
-            //request.SetAuthorization("erik", "erik");
-
-
-            var testRequest = new HmRpcClient.Request()
+            var testRequest = new Request()
             {
                 Method = "system.listMethods",
                 Parameters = { "Bla" }
@@ -50,12 +41,18 @@ namespace HmLib.CommandLine
 
             var success = expected == testoutput.ToString();
 
+            var request = new Request()
+            {
+                Method = "system.listMethods"
+                //Method = "system.methodHelp",
+                //Parameters = { "system.listMethods" }
+            };
             var endpoint = new IPEndPoint(IPAddress.Parse("192.168.63.3"), 2001);
             using (var client = new HmRpcClient(endpoint))
             {
                 await client.ConnectAsync();
 
-                await client.ExecuteRequest(request);
+                var respone = await client.ExecuteRequest(request);
 
             }
         }
