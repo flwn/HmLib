@@ -7,6 +7,8 @@ using System.Text;
 
 namespace HmLib.Binary
 {
+    using Serialization;
+
     public class HmBinaryMessageWriter
     {
         private static readonly byte[] PacketHeader = Encoding.ASCII.GetBytes("Bin");

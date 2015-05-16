@@ -5,6 +5,8 @@ using System.Threading;
 
 namespace HmLib.Binary
 {
+    using Serialization;
+
     public class HmBinaryWriter : IDisposable, IHmStreamWriter
     {
         private readonly Stream _outStream;

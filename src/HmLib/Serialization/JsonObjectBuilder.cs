@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace HmLib
+namespace HmLib.Serialization
 {
     public class JsonObjectBuilder : IObjectBuilder
     {

@@ -1,4 +1,4 @@
-namespace HmLib
+namespace HmLib.Serialization
 {
     public enum ContentType
     {
