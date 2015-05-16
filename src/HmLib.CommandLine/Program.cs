@@ -28,7 +28,7 @@ namespace HmLib.CommandLine
             testRequest.SetAuthorization("wiki", "pedia");
 
             var bufferStream = new MemoryStream();
-            new HmBinaryMessageWriter().WriteRequest(bufferStream, testRequest);
+            new HmBinaryProtocol().WriteRequest(bufferStream, testRequest);
             var buffer = bufferStream.ToArray();
             var testoutput = new StringBuilder((int)buffer.Length * 2);
 

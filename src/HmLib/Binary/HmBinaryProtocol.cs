@@ -9,7 +9,7 @@ namespace HmLib.Binary
 {
     using Serialization;
 
-    public class HmBinaryMessageWriter
+    public class HmBinaryProtocol : IProtocol
     {
         private static readonly byte[] PacketHeader = Encoding.ASCII.GetBytes("Bin");
 
@@ -28,7 +28,7 @@ namespace HmLib.Binary
         private readonly Func<IObjectBuilder> _objectBuilderFactory = () => new JsonObjectBuilder();
 
 
-        public HmBinaryMessageWriter()
+        public HmBinaryProtocol()
         {
         }
 

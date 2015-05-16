@@ -19,6 +19,8 @@ namespace HmLib
 
         private readonly TcpClient _tcpClient = new TcpClient();
 
+        private readonly IProtocol _protocol = new HmBinaryProtocol();
+
         public HmRpcClient(string host, int port)
         {
             _host = host;
@@ -52,11 +54,11 @@ namespace HmLib
 
             var networkStream = _tcpClient.GetStream();
 
-            new HmBinaryMessageWriter().WriteRequest(networkStream, request);
+            _protocol.WriteRequest(networkStream, request);
 
             Thread.Sleep(100);
 
-            var response = new HmBinaryMessageWriter().ReadResponse(networkStream);
+            var response = _protocol.ReadResponse(networkStream);
 
             return response;
         }
