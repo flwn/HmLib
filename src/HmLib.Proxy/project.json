@@ -7,19 +7,13 @@
     "licenseUrl": "",
 
     "dependencies": {
-        "HmLib": "1.0.0-*",
-        "HmLib.Proxy": "1.0.0-*"
-    },
-
-    "commands": {
-        "HmLib.CommandLine": "HmLib.CommandLine"
+        "HmLib": "1.0.0"
     },
 
     "frameworks": {
-        "dnx451": { } //,
+        "dnx451": { },
         //"dnxcore50": {
         //    "dependencies": {
-        //        "System.Console": "4.0.0-beta-22816",
         //        "System.Collections": "4.0.10-beta-22816",
         //        "System.Linq": "4.0.0-beta-22816",
         //        "System.Threading": "4.0.10-beta-22816",
