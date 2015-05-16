@@ -16,6 +16,8 @@ Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "HmLib", "src\HmLib\HmLib.xp
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "HmLib.CommandLine", "src\HmLib.CommandLine\HmLib.CommandLine.xproj", "{F6AE03B7-2DB3-4A6C-AB33-C80572160E0F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HmLib.Tests", "src\HmLib.Tests\HmLib.Tests.csproj", "{DD602AC1-0B70-403C-ADE6-1F0DBE980B14}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +32,10 @@ Global
 		{F6AE03B7-2DB3-4A6C-AB33-C80572160E0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6AE03B7-2DB3-4A6C-AB33-C80572160E0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6AE03B7-2DB3-4A6C-AB33-C80572160E0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DD602AC1-0B70-403C-ADE6-1F0DBE980B14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DD602AC1-0B70-403C-ADE6-1F0DBE980B14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DD602AC1-0B70-403C-ADE6-1F0DBE980B14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DD602AC1-0B70-403C-ADE6-1F0DBE980B14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -37,5 +43,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{CA6A825F-90FD-4620-9AD9-1D9F93C9E718} = {16A906FD-F620-4397-8887-BE57999EC522}
 		{F6AE03B7-2DB3-4A6C-AB33-C80572160E0F} = {16A906FD-F620-4397-8887-BE57999EC522}
+		{DD602AC1-0B70-403C-ADE6-1F0DBE980B14} = {16A906FD-F620-4397-8887-BE57999EC522}
 	EndGlobalSection
 EndGlobal
