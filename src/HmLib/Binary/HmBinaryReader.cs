@@ -63,12 +63,24 @@ namespace HmLib.Binary
         {
 
             var buffer = new byte[count];
-            var read = _input.Read(buffer, 0, count);
-            _bytesRead += read;
-            if (read != count)
+            var bytesRead = 0;
+            do
             {
-                throw new InvalidOperationException("");
-            }
+               var read = _input.Read(buffer, bytesRead, count - bytesRead);
+
+                _bytesRead += read;
+
+                if (read == 0)
+                {
+                    throw new EndOfStreamException(string.Format("Read {0} bytes, expected {0} bytes.", read, count));
+                }
+
+                bytesRead += read;
+
+                //loop until buffer is filled in case the stream has not catched up yet.
+            } while (bytesRead < count);
+
+
             return buffer;
         }
 

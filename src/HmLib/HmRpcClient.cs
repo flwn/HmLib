@@ -16,7 +16,6 @@ namespace HmLib
         private readonly string _host;
         private readonly int _port;
 
-
         private readonly TcpClient _tcpClient = new TcpClient();
 
         private readonly IProtocol _protocol = new HmBinaryProtocol();
@@ -35,6 +34,8 @@ namespace HmLib
 
         public async Task ConnectAsync(string host = null, int? port = null)
         {
+            _tcpClient.ReceiveTimeout = 1000;
+
             if (_endpoint != null)
             {
                 await _tcpClient.ConnectAsync(_endpoint.Address, _endpoint.Port);
