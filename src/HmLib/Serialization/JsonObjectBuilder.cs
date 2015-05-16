@@ -10,7 +10,9 @@ namespace HmLib.Serialization
         private readonly TextWriter _writer = new StringWriter();
 
         private const char Quote = '"';
-        
+        private const string True = "true";
+        private const string False = "false";
+
         private Stack<BuilderState> _state = new Stack<BuilderState>(4);
 
         private List<bool> _objectState = new List<bool>(4);
@@ -124,7 +126,7 @@ namespace HmLib.Serialization
 
         public void WriteBooleanValue(bool value)
         {
-            _writer.Write(value);
+            _writer.Write(value ? True : False);
         }
 
         public override string ToString()
