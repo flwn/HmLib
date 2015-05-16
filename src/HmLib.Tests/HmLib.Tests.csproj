@@ -31,11 +31,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Fixie, Version=1.0.0.15, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Fixie.1.0.0.15\lib\net45\Fixie.dll</HintPath>
+      <HintPath>..\..\packages\Fixie.1.0.0.15\lib\net45\Fixie.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="HmLib">
-      <HintPath>..\artifacts\bin\HmLib\Debug\dnx451\HmLib.dll</HintPath>
+      <HintPath>..\..\artifacts\bin\HmLib\Debug\dnx451\HmLib.dll</HintPath>
     </Reference>
     <Reference Include="Shouldly, Version=2.5.0.0, Culture=neutral, PublicKeyToken=6042cbcb05cbc941, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Shouldly.2.5.0\lib\net40\Shouldly.dll</HintPath>
@@ -52,6 +52,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Binary\HmBinaryProtocolTests.cs" />
+    <Compile Include="Binary\HmBitConverterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -10,7 +10,6 @@ namespace HmLib.Tests.Binary
 {
     using HmLib.Binary;
     using Shouldly;
-    using System.Globalization;
 
     public class HmBinaryProtocolTests
     {

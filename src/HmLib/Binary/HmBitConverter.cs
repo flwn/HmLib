@@ -57,8 +57,8 @@ namespace HmLib.Binary
             var mantissa = (int)Math.Round(temp * (double)0x40000000);
             var result = new byte[8];
 
-            Array.Copy(BitConverter.GetBytes(mantissa), result, 4);
-            Array.Copy(BitConverter.GetBytes(exponent), 0, result, 4, 4);
+            Array.Copy(GetBytes(mantissa), result, 4);
+            Array.Copy(GetBytes(exponent), 0, result, 4, 4);
             
             return result;
         }
@@ -95,6 +95,7 @@ namespace HmLib.Binary
                     value[startIndex + 1],
                     value[startIndex + 0],
                 };
+                return BitConverter.ToInt32(value, 0);
             }
 
             return BitConverter.ToInt32(value, startIndex);
