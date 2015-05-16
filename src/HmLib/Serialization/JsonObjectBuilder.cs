@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 
 namespace HmLib.Serialization
@@ -7,7 +8,7 @@ namespace HmLib.Serialization
     public class JsonObjectBuilder : IObjectBuilder
     {
 
-        private readonly TextWriter _writer = new StringWriter();
+        private readonly TextWriter _writer;
 
         private const char Quote = '"';
         private const string True = "true";
@@ -27,7 +28,7 @@ namespace HmLib.Serialization
 
         public JsonObjectBuilder(TextWriter writer = null)
         {
-            _writer = writer ?? new StringWriter();
+            _writer = writer ?? new StringWriter(CultureInfo.InvariantCulture);
 
             Push(BuilderState.Start);
         }
