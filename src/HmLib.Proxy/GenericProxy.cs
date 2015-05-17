@@ -7,9 +7,9 @@ namespace HmLib.Proxy
 {
     // This project can output the Class library as a NuGet Package.
     // To enable this option, right-click on the project and select the Properties menu item. In the Build tab select "Produce outputs on build".
-    public class ProxyClient
+    public class GenericProxy
     {
-        public ProxyClient(HmRpcClient rpcClient)
+        public GenericProxy(HmRpcClient rpcClient)
         {
             RpcClient = rpcClient;
         }
@@ -36,6 +36,20 @@ namespace HmLib.Proxy
         {
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
             if (string.IsNullOrWhiteSpace(type)) throw new ArgumentNullException("type");
+
+            if (type == "FLOAT")
+            {
+                if (!(value is double)) throw new ArgumentException("value must be of type double", "value");
+            }
+            else if (type == "BOOL")
+            {
+                if (!(value is bool)) throw new ArgumentException("value must be of type boolean", "value");
+            }
+            else
+            {
+                throw new NotSupportedException("Types other than FLOAT are not supported.");
+            }
+
             await ExecuteMethod("setValue", address, key, value, type);
         }
         public async Task<string> MethodHelp(string methodName)
