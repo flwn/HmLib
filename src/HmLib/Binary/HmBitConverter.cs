@@ -28,7 +28,7 @@ namespace HmLib.Binary
 
         public static byte[] GetBytes(double value)
         {
-            
+
             //adapted from https://github.com/Homegear/HomegearLib.NET/blob/master/HomegearLib.NET/RPC/Encoding/BinaryEncoder.cs#L43
             var temp = Math.Abs(value);
             var exponent = 0;
@@ -53,13 +53,13 @@ namespace HmLib.Binary
             {
                 temp *= -1d;
             }
-            
+
             var mantissa = (int)Math.Round(temp * (double)0x40000000);
             var result = new byte[8];
 
             Array.Copy(GetBytes(mantissa), result, 4);
             Array.Copy(GetBytes(exponent), 0, result, 4, 4);
-            
+
             return result;
         }
 
@@ -103,16 +103,24 @@ namespace HmLib.Binary
 
         public static double ToDouble(byte[] value, int startIndex = 0)
         {
+            //adapted from https://github.com/Homegear/HomegearLib.NET/blob/master/HomegearLib.NET/RPC/Encoding/BinaryDecoder.cs
             if (value == null) {throw new ArgumentNullException("value");}
             if(startIndex < 0) {throw new ArgumentOutOfRangeException("startIndex");}
             if (startIndex > value.Length - 8) {throw new ArgumentOutOfRangeException("startIndex");}
-
 
             var mantissa = (double)ToInt32Internal(value, startIndex);
             var exponent = (double)ToInt32Internal(value, startIndex + 4);
 
             var floatValue = mantissa / (double)0x40000000;
             floatValue *= Math.Pow(2, exponent);
+
+            if (floatValue != 0)
+            {
+                var digits = Math.Floor(Math.Log10(Math.Abs(floatValue)) + 1);
+                double factor = Math.Pow(10, 9 - digits);
+                floatValue = Math.Floor(floatValue * factor + 0.5) / factor;
+            }
+
             return floatValue;
         }
     }

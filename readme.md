@@ -1,3 +1,3 @@
-# HMLib HomeMatic library for .NET
+# HmLib HomeMatic library for .NET
 
 

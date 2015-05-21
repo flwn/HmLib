@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="Binary\HmBinaryProtocolTests.cs" />
     <Compile Include="Binary\HmBitConverterTests.cs" />
+    <Compile Include="_Infrastructure\ParameterizedTestConvention.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
