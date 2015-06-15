@@ -54,7 +54,7 @@ namespace HmLib.Binary
             SerializeContent(writer, request.Method, request.Parameters);
         }
 
-        public string ReadRequest(Stream inputStream)
+        public Request ReadRequest(Stream inputStream)
         {
             var reader = new HmBinaryReader(inputStream);
 
@@ -67,8 +67,6 @@ namespace HmLib.Binary
 
             var responseType = (PacketType)reader.ReadByte();
 
-            var request = new Request();
-
             switch (responseType)
             {
                 case PacketType.BinaryRequest:
@@ -78,19 +76,14 @@ namespace HmLib.Binary
 
                     var packageHeaderSize = reader.BytesRead;
 
-                    var responseContent = _objectBuilderFactory();
 
-                    responseContent.BeginStruct();
-                    responseContent.BeginItem();
-                    responseContent.WritePropertyName("method");
-                    var method = reader.ReadString();
-                    responseContent.WriteStringValue(method);
-                    responseContent.EndItem();
-                    responseContent.BeginItem();
-                    responseContent.WritePropertyName("args");
-                    ReadArray(reader, responseContent);
-                    responseContent.EndItem();
-                    responseContent.EndStruct();
+                    var request = new Request();
+                    request.Method = reader.ReadString();
+
+                    var builder = new ObjectBuilder();
+                    ReadArray(reader, builder);
+
+                    request.Parameters = builder.CollectionResult;
 
                     var bytesRead = reader.BytesRead - packageHeaderSize;
 
@@ -104,8 +97,7 @@ namespace HmLib.Binary
                         throw new ProtocolException("The response is incomplete or corrupted.");
                     }
 
-
-                    return responseContent.ToString();
+                    return request;
 
                 default:
                     Debugger.Break();

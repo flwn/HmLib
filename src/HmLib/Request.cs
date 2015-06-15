@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
 namespace HmLib
 {
@@ -48,6 +50,11 @@ namespace HmLib
 
             var headerValue = string.Concat("Basic ", valueEncoded);
             SetHeader(headerKey, headerValue);
+        }
+
+        public override string ToString()
+        {
+            return string.Format("Request Method={0}. Parameters (Count={1}): {2}.", Method, Parameters.Count, string.Join(", ", Parameters.Select(x => (x ?? string.Empty).ToString())));
         }
     }
 }
