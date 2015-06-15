@@ -112,7 +112,7 @@ namespace HmLib.Binary
             writer.Write(PacketHeader);
             writer.Write((byte)PacketType.ErrorResponse);
 
-            var response = new Dictionary<string, object> { { "faultCode", -10 },  { "faultString", errorMessage } };
+            var response = new Dictionary<string, object> { { "faultCode", -10 }, { "faultString", errorMessage } };
             using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
             {
                 _bodySerializer.Serialize(bufferedWriter, response);
@@ -215,9 +215,9 @@ namespace HmLib.Binary
 
 
 
-        private void ReadResponse(HmBinaryReader reader, IObjectBuilder builder)
+        private void ReadResponse(IHmStreamReader reader, IObjectBuilder builder)
         {
-            var type = (ContentType)reader.ReadInt32();
+            var type = reader.ReadContentType();
 
             switch (type)
             {
@@ -247,7 +247,7 @@ namespace HmLib.Binary
             }
         }
 
-        private void ReadStruct(HmBinaryReader reader, IObjectBuilder builder)
+        private void ReadStruct(IHmStreamReader reader, IObjectBuilder builder)
         {
             var elementCount = reader.ReadInt32();
             builder.BeginStruct();
@@ -267,7 +267,7 @@ namespace HmLib.Binary
             builder.EndStruct();
         }
 
-        private void ReadArray(HmBinaryReader reader, IObjectBuilder builder)
+        private void ReadArray(IHmStreamReader reader, IObjectBuilder builder)
         {
             var itemCount = reader.ReadInt32();
 

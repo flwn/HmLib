@@ -4,11 +4,13 @@ using System.Text;
 
 namespace HmLib.Binary
 {
-    public class HmBinaryReader
+    using Serialization;
+
+    public class HmBinaryReader : IHmStreamReader
     {
         private static readonly Encoding Encoding = Encoding.ASCII;
 
-        private long _bytesRead = 0L;
+        private long _bytesReadTotal = 0L;
         private Stream _input;
 
         public HmBinaryReader(Stream input, bool leaveOpen = true)
@@ -16,6 +18,12 @@ namespace HmLib.Binary
             _input = input;
         }
 
+        public ContentType ReadContentType()
+        {
+            var contentType = (ContentType)ReadInt32();
+
+            return contentType;
+        }
 
         public int ReadInt32()
         {
@@ -33,7 +41,7 @@ namespace HmLib.Binary
             }
 
             var stringBytes = ReadBytes(stringLength);
-          
+
             var stringValue = Encoding.GetString(stringBytes);
 
             return stringValue;
@@ -55,8 +63,13 @@ namespace HmLib.Binary
 
         public byte ReadByte()
         {
-            _bytesRead++;
-            return (byte)_input.ReadByte();
+            _bytesReadTotal++;
+            var @byte = _input.ReadByte();
+            if (@byte == -1)
+            {
+                throw new EndOfStreamException();
+            }
+            return (byte)@byte;
         }
 
         public byte[] ReadBytes(int count)
@@ -66,13 +79,13 @@ namespace HmLib.Binary
             var bytesRead = 0;
             do
             {
-               var read = _input.Read(buffer, bytesRead, count - bytesRead);
+                var read = _input.Read(buffer, bytesRead, count - bytesRead);
 
-                _bytesRead += read;
+                _bytesReadTotal += read;
 
                 if (read == 0)
                 {
-                    throw new EndOfStreamException(string.Format("Read {0} bytes, expected {0} bytes.", read, count));
+                    throw new EndOfStreamException(string.Format("Read {0} bytes, expected {0} bytes.", bytesRead, count));
                 }
 
                 bytesRead += read;
@@ -84,6 +97,7 @@ namespace HmLib.Binary
             return buffer;
         }
 
-        public long BytesRead { get { return _bytesRead; } }
+        public long BytesRead { get { return _bytesReadTotal; } }
+
     }
 }

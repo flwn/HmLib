@@ -39,10 +39,6 @@ namespace HmLib.Binary
             Write((int)contentType);
         }
 
-        public void Write(float value)
-        {
-            Write((double)value);
-        }
 
         public void Write(double value)
         {
@@ -90,7 +86,7 @@ namespace HmLib.Binary
             {
                 throw new ArgumentNullException("value");
             }
-            
+
             OutStream.Write(value, 0, value.Length);
         }
 
@@ -153,7 +149,7 @@ namespace HmLib.Binary
         public static HmBinaryWriter Buffered(HmBinaryWriter wrappedWriter, bool writeLengthUpfront = true)
         {
             var bufferedWriter = new BufferedWriter(wrappedWriter, writeLengthUpfront);
-            
+
             return bufferedWriter;
         }
     }
