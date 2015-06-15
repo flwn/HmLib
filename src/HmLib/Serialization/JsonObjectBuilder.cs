@@ -46,7 +46,7 @@ namespace HmLib.Serialization
 
             _writer.Write("}");
         }
-        public void BeginArray()
+        public void BeginArray(int? length = null)
         {
             Push(BuilderState.Array);
 
@@ -99,7 +99,7 @@ namespace HmLib.Serialization
             _writer.Write(Quote);
             _writer.Write(":");
         }
-        
+
 
         public void WriteStringValue(string value)
         {

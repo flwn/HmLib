@@ -16,7 +16,7 @@ namespace HmLib
 
         public string Method { get; set; }
 
-        public ICollection<object> Parameters { get; private set; }
+        public ICollection<object> Parameters { get; set; }
 
         internal int HeaderLength { get; private set; }
 

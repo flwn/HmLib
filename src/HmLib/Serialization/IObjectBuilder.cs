@@ -2,7 +2,7 @@
 {
     public interface IObjectBuilder
     {
-        void BeginArray();
+        void BeginArray(int? count = null);
         void BeginItem();
         void BeginStruct();
         void EndArray();

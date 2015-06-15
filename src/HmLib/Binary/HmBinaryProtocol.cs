@@ -53,6 +53,98 @@ namespace HmLib.Binary
 
             SerializeContent(writer, request.Method, request.Parameters);
         }
+
+        public string ReadRequest(Stream inputStream)
+        {
+            var reader = new HmBinaryReader(inputStream);
+
+            var responseHeader = reader.ReadBytes(3);
+
+            if (!responseHeader.SequenceEqual(PacketHeader))
+            {
+                throw new ProtocolException("Packet Header not recognized.");
+            }
+
+            var responseType = (PacketType)reader.ReadByte();
+
+            var request = new Request();
+
+            switch (responseType)
+            {
+                case PacketType.BinaryRequest:
+                case PacketType.BinaryRequestHeader:
+
+                    var responseLength = reader.ReadInt32();
+
+                    var packageHeaderSize = reader.BytesRead;
+
+                    var responseContent = _objectBuilderFactory();
+
+                    responseContent.BeginStruct();
+                    responseContent.BeginItem();
+                    responseContent.WritePropertyName("method");
+                    var method = reader.ReadString();
+                    responseContent.WriteStringValue(method);
+                    responseContent.EndItem();
+                    responseContent.BeginItem();
+                    responseContent.WritePropertyName("args");
+                    ReadArray(reader, responseContent);
+                    responseContent.EndItem();
+                    responseContent.EndStruct();
+
+                    var bytesRead = reader.BytesRead - packageHeaderSize;
+
+                    if (reader.BytesRead > int.MaxValue)
+                    {
+                        throw new ProtocolException("The response message is too large to handle.");
+                    }
+
+                    if (bytesRead != responseLength)
+                    {
+                        throw new ProtocolException("The response is incomplete or corrupted.");
+                    }
+
+
+                    return responseContent.ToString();
+
+                default:
+                    Debugger.Break();
+                    throw new ProtocolException("Request type not recognized.");
+            }
+        }
+
+        public void WriteErrorResponse(Stream outputStream, string errorMessage)
+        {
+            var writer = new HmBinaryWriter(outputStream);
+
+            writer.Write(PacketHeader);
+            writer.Write((byte)PacketType.ErrorResponse);
+
+            var response = new Dictionary<string, object> { { "faultCode", -10 },  { "faultString", errorMessage } };
+            using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
+            {
+                _bodySerializer.Serialize(bufferedWriter, response);
+                bufferedWriter.Flush();
+            }
+
+        }
+
+        public void WriteResponse(Stream outputStream, object response)
+        {
+            var writer = new HmBinaryWriter(outputStream);
+
+            writer.Write(PacketHeader);
+
+            writer.Write((byte)PacketType.BinaryResponse);
+            using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
+            {
+                _bodySerializer.Serialize(bufferedWriter, response);
+                bufferedWriter.Flush();
+            }
+
+
+        }
+
         public Response ReadResponse(Stream inputStream)
         {
             var reader = new HmBinaryReader(inputStream);
@@ -61,7 +153,7 @@ namespace HmLib.Binary
 
             if (!responseHeader.SequenceEqual(PacketHeader))
             {
-                throw new InvalidOperationException("Packet Header not recognized.");
+                throw new ProtocolException("Packet Header not recognized.");
             }
 
             var responseType = (PacketType)reader.ReadByte();
@@ -71,23 +163,23 @@ namespace HmLib.Binary
                 case PacketType.BinaryResponse:
                 case PacketType.BinaryResponseHeader:
                 case PacketType.ErrorResponse:
-                    
+
                     var responseLength = reader.ReadInt32();
                     var packageHeaderSize = reader.BytesRead;
 
                     var responseContent = _objectBuilderFactory();
                     ReadResponse(reader, responseContent);
-                    
+
                     var bytesRead = reader.BytesRead - packageHeaderSize;
 
                     if (reader.BytesRead > int.MaxValue)
                     {
-                        throw new InvalidOperationException("The response message is too large to handle.");
+                        throw new ProtocolException("The response message is too large to handle.");
                     }
 
                     if (bytesRead != responseLength)
                     {
-                        throw new InvalidOperationException("The response is incomplete or corrupted.");
+                        throw new ProtocolException("The response is incomplete or corrupted.");
                     }
 
                     var response = new Response
@@ -98,11 +190,9 @@ namespace HmLib.Binary
 
                     return response;
 
-                case PacketType.BinaryRequest:
-                case PacketType.BinaryRequestHeader:
                 default:
                     Debugger.Break();
-                    throw new ArgumentOutOfRangeException();
+                    throw new ProtocolException();
             }
         }
 
@@ -189,7 +279,7 @@ namespace HmLib.Binary
         {
             var itemCount = reader.ReadInt32();
 
-            builder.BeginArray();
+            builder.BeginArray(itemCount);
             for (; itemCount > 0; itemCount--)
             {
                 builder.BeginItem();
