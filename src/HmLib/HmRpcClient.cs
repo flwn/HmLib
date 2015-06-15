@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace HmLib
 {
     using Binary;
-    
+
 
     public class HmRpcClient : IDisposable
     {
@@ -34,7 +34,7 @@ namespace HmLib
 
         public async Task ConnectAsync(string host = null, int? port = null)
         {
-            _tcpClient.ReceiveTimeout = 1000;
+            _tcpClient.ReceiveTimeout = 3000 * 10;
 
             if (_endpoint != null)
             {
