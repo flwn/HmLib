@@ -29,9 +29,9 @@ namespace HmLib.Serialization
         {
         }
 
-        public void BeginStruct()
+        public void BeginStruct(int? count = null)
         {
-            var dict = new Dictionary<string, object>();
+            var dict = new Dictionary<string, object>(count ?? 0);
             if (_current.Count == 0)
             {
                 StructResult = dict;

@@ -11,6 +11,8 @@ namespace HmLib.Serialization
     /// </summary>
     public class HmSerializer
     {
+        internal readonly IObjectBuilder _debugOutput = new JsonObjectBuilder();
+
         private const uint OuterLevel = 0;
         private const uint InnerLevel = 1;
 
@@ -20,7 +22,7 @@ namespace HmLib.Serialization
         {
             typeof (IDictionary<string, string>), typeof (IDictionary<string, object>),
             typeof (ICollection), typeof (ICollection<object>),
-            typeof (ICollection<string>), typeof (ICollection<bool>), 
+            typeof (ICollection<string>), typeof (ICollection<bool>),
             typeof (ICollection<int>), typeof (ICollection<double>)
         };
 
@@ -91,6 +93,7 @@ namespace HmLib.Serialization
 
         private void SerializeCollection(IHmStreamWriter writer, ICollection listType, bool writeType)
         {
+            _debugOutput.BeginArray(listType.Count);
             if (writeType)
             {
                 writer.Write(ContentType.Array);
@@ -100,12 +103,17 @@ namespace HmLib.Serialization
 
             foreach (var item in listType)
             {
+                _debugOutput.BeginItem();
                 SerializeInternal(writer, item, InnerLevel);
+                _debugOutput.EndItem();
             }
+            _debugOutput.EndArray();
         }
 
         private void SerializeStruct<T>(IHmStreamWriter writer, IDictionary<string, T> structType, bool writeType)
         {
+            _debugOutput.BeginStruct(structType.Count);
+
             if (writeType)
             {
                 writer.Write(ContentType.Struct);
@@ -115,10 +123,14 @@ namespace HmLib.Serialization
 
             foreach (var kvp in structType)
             {
+                _debugOutput.BeginItem();
+                _debugOutput.WritePropertyName(kvp.Key);
                 writer.Write(kvp.Key);
 
                 SerializeInternal(writer, kvp.Value, InnerLevel);
+                _debugOutput.EndItem();
             }
+            _debugOutput.EndStruct();
         }
 
         private void SerializeSimpleValue(IHmStreamWriter writer, object value, bool writeType)
@@ -131,6 +143,7 @@ namespace HmLib.Serialization
             var stringValue = value as string;
             if (stringValue != null)
             {
+                _debugOutput.WriteStringValue(stringValue);
                 if (writeType)
                 {
                     writer.Write(ContentType.String);
@@ -145,6 +158,7 @@ namespace HmLib.Serialization
                 {
                     writer.Write(ContentType.Int);
                 }
+                _debugOutput.WriteInt32Value((int)value);
                 writer.Write((int)value);
                 return;
             }
@@ -155,6 +169,7 @@ namespace HmLib.Serialization
                 {
                     writer.Write(ContentType.Boolean);
                 }
+                _debugOutput.WriteBooleanValue((bool)value);
                 writer.Write((bool)value);
                 return;
             }
@@ -165,6 +180,7 @@ namespace HmLib.Serialization
                 {
                     writer.Write(ContentType.Float);
                 }
+                _debugOutput.WriteDoubleValue((double)value);
                 writer.Write((double)value);
                 return;
             }

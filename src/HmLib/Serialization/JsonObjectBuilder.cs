@@ -16,7 +16,7 @@ namespace HmLib.Serialization
 
         private Stack<BuilderState> _state = new Stack<BuilderState>(4);
 
-        private List<bool> _objectState = new List<bool>(4);
+        private List<bool> _firstObjectItemWritten = new List<bool>(4);
 
         public enum BuilderState : byte
         {
@@ -33,7 +33,7 @@ namespace HmLib.Serialization
             Push(BuilderState.Start);
         }
 
-        public void BeginStruct()
+        public void BeginStruct(int? count = null)
         {
             Push(BuilderState.Struct);
 
@@ -62,21 +62,19 @@ namespace HmLib.Serialization
 
         public void BeginItem()
         {
-            var idx = _state.Count - 1;
-
             var currentState = Peek();
             if (currentState != BuilderState.Struct && currentState != BuilderState.Array)
             {
                 throw new InvalidOperationException("Invalid state.");
             }
 
-            if (_objectState[_objectState.Count - 1])
+            if (_firstObjectItemWritten[_firstObjectItemWritten.Count - 1])
             {
                 WriteItemSeparation();
             }
             else
             {
-                _objectState[_objectState.Count - 1] = true;
+                _firstObjectItemWritten[_firstObjectItemWritten.Count - 1] = true;
             }
 
             Push(BuilderState.Item);
@@ -152,7 +150,7 @@ namespace HmLib.Serialization
 
             if (lastState == BuilderState.Array || lastState == BuilderState.Struct)
             {
-                _objectState.RemoveAt(_objectState.Count - 1);
+                _firstObjectItemWritten.RemoveAt(_firstObjectItemWritten.Count - 1);
             }
 
             return lastState;
@@ -172,7 +170,7 @@ namespace HmLib.Serialization
         {
             if (state == BuilderState.Array || state == BuilderState.Struct)
             {
-                _objectState.Add(false);
+                _firstObjectItemWritten.Add(false);
             }
             _state.Push(state);
         }

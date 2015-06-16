@@ -4,7 +4,7 @@
     {
         void BeginArray(int? count = null);
         void BeginItem();
-        void BeginStruct();
+        void BeginStruct(int? count = null);
         void EndArray();
         void EndItem();
         void EndStruct();

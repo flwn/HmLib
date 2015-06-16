@@ -31,24 +31,27 @@ namespace HmLib.Binary
         public HmBinaryProtocol()
         {
         }
-
+        public HmBinaryProtocol(Func<IObjectBuilder> objectBuilderFactory)
+        {
+            _objectBuilderFactory = objectBuilderFactory;
+        }
 
         public void WriteRequest(Stream outputStream, Request request)
         {
             var writer = new HmBinaryWriter(outputStream);
 
-            writer.Write(PacketHeader);
+            writer.WriteRaw(PacketHeader);
 
 
             if (request.Headers.Count > 0)
             {
-                writer.Write((byte)PacketType.BinaryRequestHeader);
+                writer.WriteRaw((byte)PacketType.BinaryRequestHeader);
 
                 SerializeHeaders(writer, request.Headers);
             }
             else
             {
-                writer.Write((byte)PacketType.BinaryRequest);
+                writer.WriteRaw((byte)PacketType.BinaryRequest);
             }
 
             SerializeContent(writer, request.Method, request.Parameters);
@@ -67,25 +70,32 @@ namespace HmLib.Binary
 
             var responseType = (PacketType)reader.ReadByte();
 
+
+
             switch (responseType)
             {
-                case PacketType.BinaryRequest:
                 case PacketType.BinaryRequestHeader:
+                    ReadHeaders(reader);
+                    goto case PacketType.BinaryRequest;
+
+                case PacketType.BinaryRequest:
 
                     var responseLength = reader.ReadInt32();
-
-                    var packageHeaderSize = reader.BytesRead;
-
+                    var contentOffset = reader.BytesRead;
 
                     var request = new Request();
                     request.Method = reader.ReadString();
 
-                    var builder = new ObjectBuilder();
+                    var builder = _objectBuilderFactory();// new ObjectBuilder();
                     ReadArray(reader, builder);
 
-                    request.Parameters = builder.CollectionResult;
+                    var objectBuilder = builder as ObjectBuilder;
+                    if (objectBuilder != null)
+                    {
+                        request.Parameters = objectBuilder.CollectionResult;
+                    }
 
-                    var bytesRead = reader.BytesRead - packageHeaderSize;
+                    var bytesRead = reader.BytesRead - contentOffset;
 
                     if (reader.BytesRead > int.MaxValue)
                     {
@@ -109,8 +119,8 @@ namespace HmLib.Binary
         {
             var writer = new HmBinaryWriter(outputStream);
 
-            writer.Write(PacketHeader);
-            writer.Write((byte)PacketType.ErrorResponse);
+            writer.WriteRaw(PacketHeader);
+            writer.WriteRaw((byte)PacketType.ErrorResponse);
 
             var response = new Dictionary<string, object> { { "faultCode", -10 }, { "faultString", errorMessage } };
             using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
@@ -125,9 +135,9 @@ namespace HmLib.Binary
         {
             var writer = new HmBinaryWriter(outputStream);
 
-            writer.Write(PacketHeader);
+            writer.WriteRaw(PacketHeader);
 
-            writer.Write((byte)PacketType.BinaryResponse);
+            writer.WriteRaw((byte)PacketType.BinaryResponse);
             using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
             {
                 _bodySerializer.Serialize(bufferedWriter, response);
@@ -152,17 +162,20 @@ namespace HmLib.Binary
 
             switch (responseType)
             {
-                case PacketType.BinaryResponse:
                 case PacketType.BinaryResponseHeader:
+                    ReadHeaders(reader);
+                    goto case PacketType.BinaryResponse;
+
+                case PacketType.BinaryResponse:
                 case PacketType.ErrorResponse:
 
                     var responseLength = reader.ReadInt32();
-                    var packageHeaderSize = reader.BytesRead;
+                    var contentOffset = reader.BytesRead;
 
                     var responseContent = _objectBuilderFactory();
                     ReadResponse(reader, responseContent);
 
-                    var bytesRead = reader.BytesRead - packageHeaderSize;
+                    var bytesRead = reader.BytesRead - contentOffset;
 
                     if (reader.BytesRead > int.MaxValue)
                     {
@@ -212,6 +225,11 @@ namespace HmLib.Binary
             }
         }
 
+        private void ReadHeaders(HmBinaryReader reader)
+        {
+            var headerLenght = reader.ReadInt32();
+            reader.ReadBytes(headerLenght);
+        }
 
 
 
@@ -250,7 +268,7 @@ namespace HmLib.Binary
         private void ReadStruct(IHmStreamReader reader, IObjectBuilder builder)
         {
             var elementCount = reader.ReadInt32();
-            builder.BeginStruct();
+            builder.BeginStruct(elementCount);
 
             for (; elementCount > 0; elementCount--)
             {

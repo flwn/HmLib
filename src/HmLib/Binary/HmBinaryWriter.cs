@@ -7,7 +7,7 @@ namespace HmLib.Binary
 {
     using Serialization;
 
-    public class HmBinaryWriter : IDisposable, IHmStreamWriter
+    public class HmBinaryWriter : IDisposable, IHmStreamWriter, IObjectBuilder
     {
         private readonly Stream _outStream;
         private readonly bool _closeOnDispose;
@@ -43,19 +43,19 @@ namespace HmLib.Binary
         public void Write(double value)
         {
             var endianCorrectValue = HmBitConverter.GetBytes(value);
-            Write(endianCorrectValue);
+            WriteRaw(endianCorrectValue);
         }
 
         public void Write(int value)
         {
             var endianCorrectValue = HmBitConverter.GetBytes(value);
-            Write(endianCorrectValue);
+            WriteRaw(endianCorrectValue);
         }
 
         public void Write(bool value)
         {
             var endianCorrectValue = HmBitConverter.GetBytes(value);
-            Write(endianCorrectValue);
+            WriteRaw(endianCorrectValue);
         }
 
         public void Write(string value)
@@ -71,16 +71,16 @@ namespace HmLib.Binary
 
             if (bytesValue.Length > 0)
             {
-                Write(bytesValue);
+                WriteRaw(bytesValue);
             }
         }
 
-        public void Write(byte value)
+        public void WriteRaw(byte value)
         {
             OutStream.WriteByte(value);
         }
 
-        public void Write(byte[] value)
+        public void WriteRaw(byte[] value)
         {
             if (value == null)
             {
@@ -151,6 +151,89 @@ namespace HmLib.Binary
             var bufferedWriter = new BufferedWriter(wrappedWriter, writeLengthUpfront);
 
             return bufferedWriter;
+        }
+
+        public void BeginArray(int? count = default(int?))
+        {
+            Write(ContentType.Array);
+
+            if (count.HasValue)
+            {
+                Write(count.Value);
+            }
+        }
+
+        public void BeginItem()
+        {
+        }
+
+        public void BeginStruct(int? count = default(int?))
+        {
+            Write(ContentType.Struct);
+
+            if (count.HasValue)
+            {
+                WriteInt32Value(count.Value);
+            }
+        }
+
+        public void EndArray()
+        {
+        }
+
+        public void EndItem()
+        {
+        }
+
+        public void EndStruct()
+        {
+        }
+
+        public void WriteBase64String(string base64String)
+        {
+            Write(ContentType.Base64);
+            Write(base64String);
+        }
+
+        public void WriteBooleanValue(bool value)
+        {
+            Write(ContentType.Boolean);
+            Write(value);
+        }
+
+        public void WriteDoubleValue(double value)
+        {
+            Write(ContentType.Float);
+            Write(value);
+        }
+
+        public void WriteInt32Value(int value)
+        {
+            Write(ContentType.Int);
+            Write(value);
+        }
+
+        public void WritePropertyName(string name)
+        {
+            Write(name);
+        }
+
+        public void WriteStringValue(string value)
+        {
+            Write(ContentType.String);
+            Write(value);
+        }
+
+        public override string ToString()
+        {
+            var buffer = ((MemoryStream)OutStream).ToArray();
+            var output = new StringBuilder(buffer.Length * 2);
+            foreach (var byte1 in buffer)
+            {
+                output.AppendFormat("{0:X2}", byte1);
+            }
+
+            return output.ToString();
         }
     }
 

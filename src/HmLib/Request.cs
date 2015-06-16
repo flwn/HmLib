@@ -20,8 +20,6 @@ namespace HmLib
 
         public ICollection<object> Parameters { get; set; }
 
-        internal int HeaderLength { get; private set; }
-
         public void SetHeader(string key, string value)
         {
             if (string.IsNullOrWhiteSpace(key)) throw new ArgumentNullException("key");
@@ -33,8 +31,6 @@ namespace HmLib
             }
 
             var headerLength = 4 + key.Length + 4 + value.Length;
-
-            HeaderLength += headerLength;
 
             Headers[key] = value;
         }
