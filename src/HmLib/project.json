@@ -1,7 +1,7 @@
 ﻿{
   "version": "1.0.0-*",
-  "description": "",
-  "authors": [ "" ],
+  "description": "Library for easy access to HomeMatic binary endpoints.",
+  "authors": [ "Erik Aalbers" ],
   "tags": [ "" ],
   "projectUrl": "",
   "licenseUrl": "",
