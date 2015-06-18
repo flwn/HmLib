@@ -16,21 +16,21 @@ namespace HmLib.Proxy
 
         public HmRpcClient RpcClient { get; set; }
 
-        public async Task<string> GetAllMetadata(string objectId)
+        public async Task<IDictionary<string, object>> GetAllMetadata(string objectId)
         {
             if (string.IsNullOrWhiteSpace(objectId)) throw new ArgumentNullException("objectId");
-            return await ExecuteMethod("getAllMetadata", objectId);
+            return (IDictionary<string, object>)await ExecuteMethod("getAllMetadata", objectId);
         }
-        public async Task<string> GetDeviceDescription(string address)
+        public async Task<IDictionary<string, object>> GetDeviceDescription(string address)
         {
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
-            return await ExecuteMethod("getDeviceDescription", address);
+            return (IDictionary<string, object>)await ExecuteMethod("getDeviceDescription", address);
         }
-        public async Task<string> GetParamset(string address, string paramsetKey)
+        public async Task<IDictionary<string,object>> GetParamset(string address, string paramsetKey)
         {
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
             if (string.IsNullOrWhiteSpace(paramsetKey)) throw new ArgumentNullException("paramsetKey");
-            return await ExecuteMethod("getParamset", address, paramsetKey);
+            return (IDictionary<string, object>)await ExecuteMethod("getParamset", address, paramsetKey);
         }
 
         public async Task SetValue(string address, string key, bool value)
@@ -78,32 +78,32 @@ namespace HmLib.Proxy
             await ExecuteMethod("setValue", address, key, value, type);
         }
 
-        public async Task<string> ListDevices(string interfaceId)
+        public async Task<ICollection<object>> ListDevices(string interfaceId)
         {
             if (string.IsNullOrWhiteSpace(interfaceId)) throw new ArgumentNullException("interfaceId");
-            return await ExecuteMethod("listDevices", interfaceId);
+            return (ICollection<object>) await ExecuteMethod("listDevices", interfaceId);
         }
 
-        public async Task<string> ListBidcosInterfaces()
+        public async Task<ICollection<object>> ListBidcosInterfaces()
         {
-            return await ExecuteMethod("listBidcosInterfaces");
+            return (ICollection<object>) await ExecuteMethod("listBidcosInterfaces");
         }
 
-        public async Task<string> GetServiceMessages()
+        public async Task<ICollection<object>> GetServiceMessages()
         {
-            return await ExecuteMethod("getServiceMessages");
+            return (ICollection<object>) await ExecuteMethod("getServiceMessages");
         }
-        public async Task<string> ListMethods()
+        public async Task<ICollection<object>> ListMethods()
         {
-            return await ExecuteMethod("system.listMethods");
+            return (ICollection<object>)await ExecuteMethod("system.listMethods");
         }
         public async Task<string> MethodHelp(string methodName)
         {
             if (string.IsNullOrWhiteSpace(methodName)) throw new ArgumentNullException("methodName");
-            return await ExecuteMethod("system.methodHelp", methodName);
+            return (string)await ExecuteMethod("system.methodHelp", methodName);
         }
 
-        public async Task<string> MultiCall(params Request[] requests)
+        public async Task<object> MultiCall(params Request[] requests)
         {
             var multiCallParams = requests
                     .Select(x => new Dictionary<string, object> {
@@ -115,7 +115,7 @@ namespace HmLib.Proxy
             return await ExecuteMethod("system.multicall", multiCallParams);
         }
 
-        protected virtual async Task<string> ExecuteMethod(string method, params object[] parameters)
+        protected virtual async Task<object> ExecuteMethod(string method, params object[] parameters)
         {
             var request = new Request { Method = method };
             foreach (var param in parameters)
@@ -124,7 +124,7 @@ namespace HmLib.Proxy
             }
             var response = await RpcClient.ExecuteRequest(request);
 
-            return string.Concat(response.Content);
+            return response.Content;
         }
 
 

@@ -64,8 +64,6 @@ namespace HmLib
 
             var response = (Response)responseBuilder.Result;
 
-            response.Content = responseBuilder.ToString();
-
             return response;
         }
 

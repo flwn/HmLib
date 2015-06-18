@@ -72,7 +72,7 @@ namespace HmLib.CommandLine
                 var req4 = new Request { Method = "setValue", Parameters = { "IEQ0020290:1", "LEVEL", 0d, "FLOAT" } };
                 var req5 = new Request { Method = "setValue", Parameters = { "IEQ0020353:1", "LEVEL", 0d, "FLOAT" } };
 
-                //var response = await proxy.MultiCall(req1, req2, req3, req4, req5);
+                var response = await proxy.MultiCall(req1, req2/*, req3, req4, req5*/);
 
                 var req1_ = new Request { Method = "setValue", Parameters = { "HEQ0359881:1", "LEVEL", 0d, "FLOAT" } };
                 var req2_ = new Request { Method = "setValue", Parameters = { "HEQ0359959:1", "LEVEL", 0d, "FLOAT" } };
@@ -131,7 +131,7 @@ namespace HmLib.CommandLine
 
         public static async Task GatherInfo(GenericProxy proxy)
         {
-            File.WriteAllText("serviceMessages.json", await proxy.GetServiceMessages());
+            //File.WriteAllText("serviceMessages.json", await proxy.GetServiceMessages());
 
 
             //File.WriteAllText("methods.json", await proxy.ListMethods());
