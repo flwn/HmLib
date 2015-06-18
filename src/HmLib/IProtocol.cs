@@ -2,9 +2,12 @@
 
 namespace HmLib
 {
+    using Serialization;
+
     public interface IProtocol
     {
-        Response ReadResponse(Stream inputStream);
+        void ReadResponse(Stream inputStream, IMessageBuilder output);
+
         void WriteRequest(Stream outputStream, Request request);
     }
 }

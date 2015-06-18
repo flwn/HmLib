@@ -68,7 +68,16 @@ namespace HmLib
                 var alreadyWrittenToResponse = false;
                 try
                 {
-                    var request = protocol.ReadRequest(stream);
+                    var messageBuilder = new Serialization.MessageBuilder();
+                    protocol.ReadRequest(stream, messageBuilder);
+
+                    var request = (Request)messageBuilder.Result;
+
+                    //{
+                    //    Method = messageBuilder.Method,
+                    //    Parameters = messageBuilder.CollectionResult
+                    //};
+
                     var response = (object)_requestHandler(request);
 
                     Console.WriteLine(request);
@@ -89,7 +98,8 @@ namespace HmLib
                     {
                         protocol.WriteResponse(buffer, response);
                         alreadyWrittenToResponse = true;
-                        await buffer.CopyToAsync(stream);
+
+                        buffer.WriteTo(stream);
                     }
                 }
                 catch (ProtocolException protocolException)

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace HmLib
 {
     using Binary;
-
+    using Serialization;
 
     public class HmRpcClient : IDisposable
     {
@@ -59,7 +59,12 @@ namespace HmLib
 
             Thread.Sleep(100);
 
-            var response = _protocol.ReadResponse(networkStream);
+            var responseBuilder = new MessageBuilder();
+            _protocol.ReadResponse(networkStream, responseBuilder);
+
+            var response = (Response)responseBuilder.Result;
+
+            response.Content = responseBuilder.ToString();
 
             return response;
         }

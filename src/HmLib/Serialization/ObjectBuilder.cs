@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace HmLib.Serialization
 {
+
     public class ObjectBuilder : IObjectBuilder
     {
         public ICollection<object> CollectionResult { get; private set; }

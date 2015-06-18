@@ -1,14 +1,17 @@
 ﻿namespace HmLib
 {
-    public class Response
+    public class Response : Message
     {
-        public bool IsError { get; set; }
+        public Response() : base(Serialization.MessageType.Response)
+        {
 
-        public string Content { get; set; }
+        }
+
+        public object Content { get; set; }
 
         public override string ToString()
         {
-            return string.Concat(IsError ? "Error: " : "Success: ", Content);
+            return string.Concat( "Response: ", Content);
         }
     }
 }

@@ -74,8 +74,13 @@ namespace HmLib.Binary
 
         public byte[] ReadBytes(int count)
         {
-
             var buffer = new byte[count];
+
+            if (count == 0)
+            {
+                return buffer;
+            }
+
             var bytesRead = 0;
             do
             {
@@ -85,7 +90,7 @@ namespace HmLib.Binary
 
                 if (read == 0)
                 {
-                    throw new EndOfStreamException(string.Format("Read {0} bytes, expected {0} bytes.", bytesRead, count));
+                    throw new EndOfStreamException(string.Format("Read {0} bytes, expected {1} bytes.", bytesRead, count));
                 }
 
                 bytesRead += read;

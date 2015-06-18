@@ -22,42 +22,26 @@ namespace HmLib.Binary
             ErrorResponse = 0xff,
         }
 
-
-        private readonly HmSerializer _headerSerializer = new HmSerializer { WriteTypeInfoLevel = HmSerializer.WriteTypesFor.Nothing };
-        private readonly HmSerializer _bodySerializer = new HmSerializer { WriteTypeInfoLevel = HmSerializer.WriteTypesFor.ChildElements };
-        private readonly Func<IObjectBuilder> _objectBuilderFactory = () => new JsonObjectBuilder();
-
+        private readonly HmSerializer _bodySerializer = new HmSerializer();
 
         public HmBinaryProtocol()
         {
         }
-        public HmBinaryProtocol(Func<IObjectBuilder> objectBuilderFactory)
-        {
-            _objectBuilderFactory = objectBuilderFactory;
-        }
 
         public void WriteRequest(Stream outputStream, Request request)
         {
-            var writer = new HmBinaryWriter(outputStream);
+            var messageBuilder = CreateMessageBuilder(outputStream);
 
-            writer.WriteRaw(PacketHeader);
+            messageBuilder.BeginMessage(MessageType.Request);
 
+            SerializeHeaders(messageBuilder, request.Headers);
 
-            if (request.Headers.Count > 0)
-            {
-                writer.WriteRaw((byte)PacketType.BinaryRequestHeader);
+            SerializeContent(messageBuilder, request.Method, request.Parameters);
 
-                SerializeHeaders(writer, request.Headers);
-            }
-            else
-            {
-                writer.WriteRaw((byte)PacketType.BinaryRequest);
-            }
-
-            SerializeContent(writer, request.Method, request.Parameters);
+            messageBuilder.EndMessage();
         }
 
-        public Request ReadRequest(Stream inputStream)
+        public void ReadRequest(Stream inputStream, IMessageBuilder messageBuilder)
         {
             var reader = new HmBinaryReader(inputStream);
 
@@ -70,30 +54,23 @@ namespace HmLib.Binary
 
             var responseType = (PacketType)reader.ReadByte();
 
-
+            messageBuilder.BeginMessage(MessageType.Request);
 
             switch (responseType)
             {
                 case PacketType.BinaryRequestHeader:
-                    ReadHeaders(reader);
+                    ReadHeaders(reader, messageBuilder);
                     goto case PacketType.BinaryRequest;
 
                 case PacketType.BinaryRequest:
 
                     var responseLength = reader.ReadInt32();
                     var contentOffset = reader.BytesRead;
+                    messageBuilder.BeginContent();
+                    messageBuilder.SetMethod(reader.ReadString());
 
-                    var request = new Request();
-                    request.Method = reader.ReadString();
-
-                    var builder = _objectBuilderFactory();// new ObjectBuilder();
-                    ReadArray(reader, builder);
-
-                    var objectBuilder = builder as ObjectBuilder;
-                    if (objectBuilder != null)
-                    {
-                        request.Parameters = objectBuilder.CollectionResult;
-                    }
+                    ReadArray(reader, messageBuilder);
+                    messageBuilder.EndContent();
 
                     var bytesRead = reader.BytesRead - contentOffset;
 
@@ -106,48 +83,41 @@ namespace HmLib.Binary
                     {
                         throw new ProtocolException("The response is incomplete or corrupted.");
                     }
-
-                    return request;
-
+                    break;
                 default:
                     Debugger.Break();
                     throw new ProtocolException("Request type not recognized.");
             }
+
+            messageBuilder.EndMessage();
         }
 
         public void WriteErrorResponse(Stream outputStream, string errorMessage)
         {
-            var writer = new HmBinaryWriter(outputStream);
+            var messageBuilder = CreateMessageBuilder(outputStream);
 
-            writer.WriteRaw(PacketHeader);
-            writer.WriteRaw((byte)PacketType.ErrorResponse);
+            messageBuilder.BeginMessage(MessageType.Error);
 
             var response = new Dictionary<string, object> { { "faultCode", -10 }, { "faultString", errorMessage } };
-            using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
-            {
-                _bodySerializer.Serialize(bufferedWriter, response);
-                bufferedWriter.Flush();
-            }
+            messageBuilder.BeginContent();
+            _bodySerializer.Serialize(messageBuilder, response);
+            messageBuilder.EndContent();
 
+            messageBuilder.EndMessage();
         }
 
         public void WriteResponse(Stream outputStream, object response)
         {
-            var writer = new HmBinaryWriter(outputStream);
+            var messageBuilder = CreateMessageBuilder(outputStream);
 
-            writer.WriteRaw(PacketHeader);
-
-            writer.WriteRaw((byte)PacketType.BinaryResponse);
-            using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
-            {
-                _bodySerializer.Serialize(bufferedWriter, response);
-                bufferedWriter.Flush();
-            }
-
-
+            messageBuilder.BeginMessage(MessageType.Response);
+            messageBuilder.BeginContent();
+            _bodySerializer.Serialize(messageBuilder, response);
+            messageBuilder.EndContent();
+            messageBuilder.EndMessage();
         }
 
-        public Response ReadResponse(Stream inputStream)
+        public void ReadResponse(Stream inputStream, IMessageBuilder output)
         {
             var reader = new HmBinaryReader(inputStream);
 
@@ -159,22 +129,37 @@ namespace HmLib.Binary
             }
 
             var responseType = (PacketType)reader.ReadByte();
+            if (responseType == PacketType.ErrorResponse)
+            {
+                output.BeginMessage(MessageType.Error);
+            }
+            else
+            {
+                output.BeginMessage(MessageType.Response);
+            }
 
             switch (responseType)
             {
+                default:
+                    Debugger.Break();
+                    throw new ProtocolException();
+
                 case PacketType.BinaryResponseHeader:
-                    ReadHeaders(reader);
+                    ReadHeaders(reader, output);
                     goto case PacketType.BinaryResponse;
 
-                case PacketType.BinaryResponse:
                 case PacketType.ErrorResponse:
+                case PacketType.BinaryResponse:
 
                     var responseLength = reader.ReadInt32();
                     var contentOffset = reader.BytesRead;
 
-                    var responseContent = _objectBuilderFactory();
-                    ReadResponse(reader, responseContent);
-
+                    output.BeginContent();
+                    if (responseLength > 0)
+                    {
+                        ReadResponse(reader, output);
+                    }
+                    output.EndContent();
                     var bytesRead = reader.BytesRead - contentOffset;
 
                     if (reader.BytesRead > int.MaxValue)
@@ -187,48 +172,57 @@ namespace HmLib.Binary
                         throw new ProtocolException("The response is incomplete or corrupted.");
                     }
 
-                    var response = new Response
-                    {
-                        IsError = responseType == PacketType.ErrorResponse,
-                        Content = responseContent.ToString()
-                    };
 
-                    return response;
+                    return;
 
-                default:
-                    Debugger.Break();
-                    throw new ProtocolException();
             }
         }
 
 
 
-        private void SerializeHeaders(HmBinaryWriter writer, IDictionary<string, string> headerDictionary)
+        private void SerializeHeaders(IMessageBuilder builder, IDictionary<string, string> headerDictionary)
         {
-            using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
+            builder.BeginHeaders(headerDictionary.Count);
+            foreach (var header in headerDictionary)
             {
-                _headerSerializer.Serialize(bufferedWriter, headerDictionary);
-
-                bufferedWriter.Flush();
+                builder.WriteHeader(header.Key, header.Value);
             }
+            builder.EndHeaders();
         }
 
-        private void SerializeContent(HmBinaryWriter writer, string methodName, ICollection<object> parameters)
+        private void SerializeContent(IMessageBuilder builder, string methodName, ICollection<object> parameters)
         {
-            using (var bufferedWriter = HmBinaryWriter.Buffered(writer))
-            {
-                _headerSerializer.Serialize(bufferedWriter, methodName);
+            builder.BeginContent();
+            builder.SetMethod(methodName);
 
-                _bodySerializer.Serialize(bufferedWriter, parameters);
+            _bodySerializer.Serialize(builder, parameters);
 
-                bufferedWriter.Flush();
-            }
+            builder.EndContent();
         }
 
-        private void ReadHeaders(HmBinaryReader reader)
+        private void ReadHeaders(HmBinaryReader reader, IMessageBuilder output)
         {
             var headerLenght = reader.ReadInt32();
-            reader.ReadBytes(headerLenght);
+            var headerOffset = reader.BytesRead;
+
+
+            var headerCount = reader.ReadInt32();
+            output.BeginHeaders(headerCount);
+
+            for (; headerCount > 0; headerCount--)
+            {
+                var key = reader.ReadString();
+                var value = reader.ReadString();
+
+                output.WriteHeader(key, value);
+            }
+            output.EndHeaders();
+
+            var actualBytesRead = reader.BytesRead - headerOffset;
+            if (actualBytesRead != headerLenght)
+            {
+                throw new ProtocolException(string.Format("Expected a header of length {0} bytes, instead read {1} bytes.", headerLenght, actualBytesRead));
+            }
         }
 
 
@@ -297,6 +291,11 @@ namespace HmLib.Binary
                 builder.EndItem();
             }
             builder.EndArray();
+        }
+
+        private static IMessageBuilder CreateMessageBuilder(Stream output)
+        {
+            return new HmBinaryMessageWriter(output);
         }
     }
 }

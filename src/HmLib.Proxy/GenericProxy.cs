@@ -124,7 +124,7 @@ namespace HmLib.Proxy
             }
             var response = await RpcClient.ExecuteRequest(request);
 
-            return response.Content;
+            return string.Concat(response.Content);
         }
 
 

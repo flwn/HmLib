@@ -5,16 +5,16 @@ using System.Text;
 
 namespace HmLib
 {
-    public class Request
+    public class Request : Message
     {
 
-        public Request()
+        public Request() : base (Serialization.MessageType.Request)
         {
             Headers = new Dictionary<string, string>();
             Parameters = new List<object>();
         }
 
-        internal IDictionary<string, string> Headers { get; private set; }
+        public IDictionary<string, string> Headers { get; private set; }
 
         public string Method { get; set; }
 

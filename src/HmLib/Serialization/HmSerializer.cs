@@ -11,7 +11,6 @@ namespace HmLib.Serialization
     /// </summary>
     public class HmSerializer
     {
-        internal readonly IObjectBuilder _debugOutput = new JsonObjectBuilder();
 
         private const uint OuterLevel = 0;
         private const uint InnerLevel = 1;
@@ -26,20 +25,9 @@ namespace HmLib.Serialization
             typeof (ICollection<int>), typeof (ICollection<double>)
         };
 
-        public enum WriteTypesFor : uint
-        {
-            Everything = 0,
-            ChildElements = 1,
-            Nothing,
-        }
-
-
         public HmSerializer()
         {
-            WriteTypeInfoLevel = WriteTypesFor.Everything;
         }
-
-        public WriteTypesFor WriteTypeInfoLevel { get; set; }
 
         public bool CanSerialize(Type t)
         {
@@ -49,9 +37,9 @@ namespace HmLib.Serialization
                    SupportedCollectionTypes.Any(x => x.IsAssignableFrom(t));
         }
 
-        public void Serialize(IHmStreamWriter writer, object o)
+        public void Serialize(IObjectBuilder builder, object o)
         {
-            if (writer == null) throw new ArgumentNullException("writer");
+            if (builder == null) throw new ArgumentNullException("writer");
             if (o == null) return;
 
             if (!CanSerialize(o.GetType()))
@@ -59,81 +47,66 @@ namespace HmLib.Serialization
                 throw new ArgumentException("Cannot serialize type.", "o");
             }
 
-            SerializeInternal(writer, o, OuterLevel);
+            SerializeInternal(builder, o, OuterLevel);
         }
 
-        private void SerializeInternal(IHmStreamWriter writer, object o, uint level)
+        private void SerializeInternal(IObjectBuilder builder, object o, uint level)
         {
-            var writeType = level >= (int)WriteTypeInfoLevel;
-
-
             var structType = o as IDictionary<string, object>;
             if (structType != null)
             {
-                SerializeStruct(writer, structType, writeType);
+                SerializeStruct(builder, structType);
                 return;
             }
 
             var stringDictionary = o as IDictionary<string, string>;
             if (stringDictionary != null)
             {
-                SerializeStruct(writer, stringDictionary, writeType);
+                SerializeStruct(builder, stringDictionary);
                 return;
             }
 
             var collectionType = o as ICollection;
             if (collectionType != null)
             {
-                SerializeCollection(writer, collectionType, writeType);
+                SerializeCollection(builder, collectionType);
                 return;
             }
 
-            SerializeSimpleValue(writer, o, writeType);
+            SerializeSimpleValue(builder, o);
         }
 
-        private void SerializeCollection(IHmStreamWriter writer, ICollection listType, bool writeType)
+        private void SerializeCollection(IObjectBuilder builder, ICollection listType)
         {
-            _debugOutput.BeginArray(listType.Count);
-            if (writeType)
-            {
-                writer.Write(ContentType.Array);
-            }
-
-            writer.Write(listType.Count);
+            builder.BeginArray(listType.Count);
 
             foreach (var item in listType)
             {
-                _debugOutput.BeginItem();
-                SerializeInternal(writer, item, InnerLevel);
-                _debugOutput.EndItem();
+                builder.BeginItem();
+                SerializeInternal(builder, item, InnerLevel);
+                builder.EndItem();
             }
-            _debugOutput.EndArray();
+
+            builder.EndArray();
         }
 
-        private void SerializeStruct<T>(IHmStreamWriter writer, IDictionary<string, T> structType, bool writeType)
+        private void SerializeStruct<T>(IObjectBuilder builder, IDictionary<string, T> structType)
         {
-            _debugOutput.BeginStruct(structType.Count);
-
-            if (writeType)
-            {
-                writer.Write(ContentType.Struct);
-            }
-
-            writer.Write(structType.Count);
+            builder.BeginStruct(structType.Count);
 
             foreach (var kvp in structType)
             {
-                _debugOutput.BeginItem();
-                _debugOutput.WritePropertyName(kvp.Key);
-                writer.Write(kvp.Key);
+                builder.BeginItem();
+                builder.WritePropertyName(kvp.Key);
 
-                SerializeInternal(writer, kvp.Value, InnerLevel);
-                _debugOutput.EndItem();
+                SerializeInternal(builder, kvp.Value, InnerLevel);
+
+                builder.EndItem();
             }
-            _debugOutput.EndStruct();
+            builder.EndStruct();
         }
 
-        private void SerializeSimpleValue(IHmStreamWriter writer, object value, bool writeType)
+        private void SerializeSimpleValue(IObjectBuilder builder, object value)
         {
             if (value == null)
             {
@@ -143,45 +116,25 @@ namespace HmLib.Serialization
             var stringValue = value as string;
             if (stringValue != null)
             {
-                _debugOutput.WriteStringValue(stringValue);
-                if (writeType)
-                {
-                    writer.Write(ContentType.String);
-                }
-                writer.Write(stringValue);
+                builder.WriteStringValue(stringValue);
                 return;
             }
 
             if (value is int)
             {
-                if (writeType)
-                {
-                    writer.Write(ContentType.Int);
-                }
-                _debugOutput.WriteInt32Value((int)value);
-                writer.Write((int)value);
+                builder.WriteInt32Value((int)value);
                 return;
             }
 
             if (value is bool)
             {
-                if (writeType)
-                {
-                    writer.Write(ContentType.Boolean);
-                }
-                _debugOutput.WriteBooleanValue((bool)value);
-                writer.Write((bool)value);
+                builder.WriteBooleanValue((bool)value);
                 return;
             }
 
             if (value is double)
             {
-                if (writeType)
-                {
-                    writer.Write(ContentType.Float);
-                }
-                _debugOutput.WriteDoubleValue((double)value);
-                writer.Write((double)value);
+                builder.WriteDoubleValue((double)value);
                 return;
             }
 
