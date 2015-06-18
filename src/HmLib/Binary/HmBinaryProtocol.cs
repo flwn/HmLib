@@ -67,11 +67,12 @@ namespace HmLib.Binary
                     var responseLength = reader.ReadInt32();
                     var contentOffset = reader.BytesRead;
                     messageBuilder.BeginContent();
-                    messageBuilder.SetMethod(reader.ReadString());
+                    var method = reader.ReadString();
+                    messageBuilder.SetMethod(method);
 
                     ReadArray(reader, messageBuilder);
                     messageBuilder.EndContent();
-
+                    messageBuilder.EndMessage();
                     var bytesRead = reader.BytesRead - contentOffset;
 
                     if (reader.BytesRead > int.MaxValue)

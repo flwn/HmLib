@@ -83,7 +83,7 @@ namespace HmLib.CommandLine
                 //var response_ = await proxy.MultiCall(req1_, req2_, req3_, req4_, req5_);
                 //return;
 
-                var pong = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "TEST", 0 } });
+                var pong = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "TEST-" + DateTime.Now.ToString("hhmm"), 0 } });
                 Console.WriteLine(pong);
 
                 return;

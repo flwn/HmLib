@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -77,7 +78,7 @@ namespace HmLib
                     //    Method = messageBuilder.Method,
                     //    Parameters = messageBuilder.CollectionResult
                     //};
-
+                    System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
                     var response = (object)_requestHandler(request);
 
                     Console.WriteLine(request);
@@ -88,6 +89,9 @@ namespace HmLib
                             response = new List<object> { "system.multicall" };
                             break;
                         case "system.multicall":
+                            var parameters = (ICollection<object>)request.Parameters.First();
+                            response = new List<object>(parameters.Select(x => ""));
+                            break;
                         default:
                             response = null;
                             break;
@@ -98,21 +102,30 @@ namespace HmLib
                     {
                         protocol.WriteResponse(buffer, response);
                         alreadyWrittenToResponse = true;
+                        var bufferArray = buffer.ToArray();
 
-                        buffer.WriteTo(stream);
+                        await stream.WriteAsync(bufferArray, 0, bufferArray.Length);
+                        //buffer.WriteTo(stream);
                     }
                 }
-                catch (ProtocolException protocolException)
+                catch (ProtocolException protocolException) when (!alreadyWrittenToResponse)
                 {
-                    if (!alreadyWrittenToResponse)
-                    {
-                        //do not write error if already written to stream...
-                        protocol.WriteResponse(stream, protocolException);
-                    }
+                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                    Console.WriteLine("Protocol Error: {0}", protocolException);
+                    Console.ResetColor();
+                    //do not write error if already written to stream...
+                    protocol.WriteErrorResponse(stream, protocolException.Message);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error: ", ex);
+                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                    Console.WriteLine("Error: {0}", ex);
+                    Console.ResetColor();
+                }
+                finally
+                {
+                    await stream.FlushAsync();
+                    stream.Close();
                 }
             }
         }

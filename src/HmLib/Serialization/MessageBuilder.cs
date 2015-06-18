@@ -52,7 +52,7 @@ namespace HmLib.Serialization
             else if (Result.Type == MessageType.Response)
             {
                 var response = (Response)Result;
-                response.Content = StructResult ?? (object)CollectionResult;
+                response.Content = StructResult ?? (object)CollectionResult ?? SimpleResult;
             }
         }
 
