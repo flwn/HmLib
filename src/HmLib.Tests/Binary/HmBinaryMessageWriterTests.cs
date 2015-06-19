@@ -1,15 +1,11 @@
-﻿using HmLib.Binary;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using Shouldly;
 
 namespace HmLib.Tests.Binary
 {
     using _Infrastructure;
+    using HmLib.Binary;
 
     public class HmBinaryMessageWriterTests
     {

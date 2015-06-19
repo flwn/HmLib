@@ -18,7 +18,7 @@ namespace HmLib
 
         private readonly TcpClient _tcpClient = new TcpClient();
 
-        private readonly IProtocol _protocol = new HmBinaryProtocol();
+        private readonly IProtocol _protocol = new RequestResponseProtocol();
 
         public HmRpcClient(string host, int port)
         {

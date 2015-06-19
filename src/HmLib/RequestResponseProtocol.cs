@@ -5,12 +5,12 @@ namespace HmLib
 {
     using Serialization;
 
-    public class HmBinaryProtocol : IProtocol
+    public class RequestResponseProtocol : IProtocol
     {
 
         private readonly HmSerializer _bodySerializer = new HmSerializer();
 
-        public HmBinaryProtocol()
+        public RequestResponseProtocol()
         {
         }
 

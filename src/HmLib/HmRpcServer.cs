@@ -64,7 +64,7 @@ namespace HmLib
 
             using (var stream = tcpClient.GetStream())
             {
-                var protocol = new HmBinaryProtocol();
+                var protocol = new RequestResponseProtocol();
 
                 var alreadyWrittenToResponse = false;
                 try

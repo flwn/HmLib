@@ -2,7 +2,7 @@ using System;
 
 namespace HmLib.Binary
 {
-    public static class HmBitConverter
+    internal static class HmBitConverter
     {
 
         public static byte[] GetBytes(int value)
@@ -68,7 +68,7 @@ namespace HmLib.Binary
             return value == 1;
         }
 
-        public static bool ToBoolean(byte[]value, int startIndex = 0)
+        public static bool ToBoolean(byte[] value, int startIndex = 0)
         {
             return BitConverter.ToBoolean(value, startIndex);
         }
@@ -104,9 +104,9 @@ namespace HmLib.Binary
         public static double ToDouble(byte[] value, int startIndex = 0)
         {
             //adapted from https://github.com/Homegear/HomegearLib.NET/blob/master/HomegearLib.NET/RPC/Encoding/BinaryDecoder.cs
-            if (value == null) {throw new ArgumentNullException("value");}
-            if(startIndex < 0) {throw new ArgumentOutOfRangeException("startIndex");}
-            if (startIndex > value.Length - 8) {throw new ArgumentOutOfRangeException("startIndex");}
+            if (value == null) { throw new ArgumentNullException("value"); }
+            if (startIndex < 0) { throw new ArgumentOutOfRangeException("startIndex"); }
+            if (startIndex > value.Length - 8) { throw new ArgumentOutOfRangeException("startIndex"); }
 
             var mantissa = (double)ToInt32Internal(value, startIndex);
             var exponent = (double)ToInt32Internal(value, startIndex + 4);

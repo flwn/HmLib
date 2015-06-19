@@ -1,12 +1,12 @@
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace HmLib.Binary
 {
     using Serialization;
-    using System.Collections.Generic;
 
     public class HmBinaryMessageReader : IMessageReader
     {

@@ -1,9 +1,9 @@
-﻿using HmLib.Binary;
-using Shouldly;
+﻿using Shouldly;
 
 namespace HmLib.Tests.Binary
 {
     using _Infrastructure;
+    using HmLib.Binary;
 
     public class HmBitConverterTests
     {

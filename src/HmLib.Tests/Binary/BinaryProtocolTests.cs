@@ -1,6 +1,4 @@
-﻿
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -11,14 +9,14 @@ namespace HmLib.Tests.Binary
     using HmLib.Binary;
     using HmLib.Serialization;
 
-    public class HmBinaryProtocolTests
+    public class BinaryProtocolTests
     {
 
         public void ShouldWriteErrorResponseCorrectly()
         {
             var errorMessage = "TEST123";
             var output = new MemoryStream();
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
             protocol.WriteErrorResponse(new HmBinaryMessageWriter(output), errorMessage);
 
             output.Seek(0, SeekOrigin.Begin);
@@ -33,7 +31,7 @@ namespace HmLib.Tests.Binary
         {
             var responseMessage = "TEST123";
             var output = new MemoryStream();
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
             protocol.WriteResponse(new HmBinaryMessageWriter(output), responseMessage);
 
             output.Seek(0, SeekOrigin.Begin);
@@ -56,7 +54,7 @@ namespace HmLib.Tests.Binary
 
 
             var output = new MemoryStream();
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
             protocol.WriteRequest(new HmBinaryMessageWriter(output), testRequest);
 
             var outputFormatted = BinaryUtils.FormatMemoryStream(output);
@@ -69,7 +67,7 @@ namespace HmLib.Tests.Binary
 
         public void ShouldReadRequestsCorrectly()
         {
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
 
             var requestByteString =
                 "42696E400000002F000000010000000D417574686F72697A6174696F6E0000001642617369632064326C72615470775A57527059513D3D000000250000001273797374656D2E6C6973744D6574686F6473000000010000000300000003426C61";
@@ -91,7 +89,7 @@ namespace HmLib.Tests.Binary
         public void BinaryWriterSupportsObjectBuilderInterface()
         {
 
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
 
             var requestByteString =
                 "42696E400000002F000000010000000D417574686F72697A6174696F6E0000001642617369632064326C72615470775A57527059513D3D000000250000001273797374656D2E6C6973744D6574686F6473000000010000000300000003426C61";
@@ -114,7 +112,7 @@ namespace HmLib.Tests.Binary
             var responseByteString = "42696E0100000000";
             var responseStream = BinaryUtils.CreateByteStream(responseByteString);
 
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
             protocol.ReadResponse(new HmBinaryMessageReader(responseStream), builder);
@@ -129,7 +127,7 @@ namespace HmLib.Tests.Binary
             var responseByteString = "42696E010000000B0000000300000003426C61";
             var responseStream = BinaryUtils.CreateByteStream(responseByteString);
 
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
             protocol.ReadResponse(new HmBinaryMessageReader(responseStream), builder);
@@ -146,7 +144,7 @@ namespace HmLib.Tests.Binary
             var responseStream = BinaryUtils.CreateByteStream(responseByteString);
 
 
-            var protocol = new HmBinaryProtocol();
+            var protocol = new RequestResponseProtocol();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
             protocol.ReadResponse(new HmBinaryMessageReader(responseStream), builder);

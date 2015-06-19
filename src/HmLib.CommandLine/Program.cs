@@ -1,20 +1,15 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace HmLib.CommandLine
 {
-    using HmLib.Serialization;
     using Proxy;
     using Proxy.Devices;
-    using System.Net.Sockets;
     using Switch = Proxy.Devices.Switch;
 
     public class Program
