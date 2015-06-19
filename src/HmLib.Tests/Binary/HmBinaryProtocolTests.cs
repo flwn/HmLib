@@ -75,10 +75,10 @@ namespace HmLib.Tests.Binary
                 "42696E400000002F000000010000000D417574686F72697A6174696F6E0000001642617369632064326C72615470775A57527059513D3D000000250000001273797374656D2E6C6973744D6574686F6473000000010000000300000003426C61";
 
             var requestStream = BinaryUtils.CreateByteStream(requestByteString);
-
+            var requestReader = new HmBinaryReader(requestStream);
             var messageBuilder = new MessageBuilder();
 
-            protocol.ReadRequest(requestStream, messageBuilder);
+            protocol.ReadRequest(requestReader, messageBuilder);
             var request = messageBuilder.Result.ShouldBeOfType<Request>();
             request.Headers.Count.ShouldBe(1);
             var authHeader = string.Concat("Basic ", Convert.ToBase64String(Encoding.UTF8.GetBytes("wiki:pedia")));
@@ -100,7 +100,8 @@ namespace HmLib.Tests.Binary
 
             var output = new MemoryStream();
 
-            protocol.ReadRequest(requestStream, new HmBinaryMessageWriter(output));
+            var requestReader = new HmBinaryReader(requestStream);
+            protocol.ReadRequest(requestReader, new HmBinaryMessageWriter(output));
 
             var outputFormatted = BinaryUtils.FormatMemoryStream(output);
 

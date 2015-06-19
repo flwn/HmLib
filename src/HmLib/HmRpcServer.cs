@@ -70,14 +70,11 @@ namespace HmLib
                 try
                 {
                     var messageBuilder = new Serialization.MessageBuilder();
-                    protocol.ReadRequest(stream, messageBuilder);
+                    var messageReader = new Binary.HmBinaryReader(stream);
+                    protocol.ReadRequest(messageReader, messageBuilder);
 
                     var request = (Request)messageBuilder.Result;
 
-                    //{
-                    //    Method = messageBuilder.Method,
-                    //    Parameters = messageBuilder.CollectionResult
-                    //};
                     System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
                     var response = (object)_requestHandler(request);
 
