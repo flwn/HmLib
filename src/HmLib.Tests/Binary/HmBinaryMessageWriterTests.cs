@@ -19,7 +19,7 @@ namespace HmLib.Tests.Binary
             var output = new MemoryStream();
             var writer = new HmBinaryMessageWriter(output, true);
 
-            writer.BeginMessage(HmLib.Serialization.MessageType.Response);
+            writer.BeginMessage(MessageType.Response);
             writer.BeginContent();
             writer.WriteStringValue("Bla");
             writer.EndContent();
@@ -34,7 +34,7 @@ namespace HmLib.Tests.Binary
             var output = new MemoryStream();
             var writer = new HmBinaryMessageWriter(output, true);
 
-            writer.BeginMessage(HmLib.Serialization.MessageType.Response);
+            writer.BeginMessage(MessageType.Response);
             writer.BeginContent();
             writer.BeginArray(1);
             writer.BeginItem();
@@ -56,7 +56,7 @@ namespace HmLib.Tests.Binary
             var writer = new HmBinaryMessageWriter(output, true);
 
 
-            writer.BeginMessage(HmLib.Serialization.MessageType.Response);
+            writer.BeginMessage(MessageType.Response);
             writer.BeginContent();
             writer.BeginStruct(1);
             writer.BeginItem();

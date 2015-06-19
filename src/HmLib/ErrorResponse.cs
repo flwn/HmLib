@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using HmLib.Serialization;
-
-namespace HmLib
+﻿namespace HmLib
 {
     public class ErrorResponse : Response
     {

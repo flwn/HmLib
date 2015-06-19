@@ -1,26 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Text;
 
-namespace HmLib.Binary
+namespace HmLib
 {
     using Serialization;
 
     public class HmBinaryProtocol : IProtocol
     {
-        private static readonly byte[] PacketHeader = Encoding.ASCII.GetBytes("Bin");
-
-        private enum PacketType : byte
-        {
-            BinaryRequest = 0x00,
-            BinaryResponse = 0x01,
-            BinaryRequestHeader = 0x40,
-            BinaryResponseHeader = 0x41,
-            ErrorResponse = 0xff,
-        }
 
         private readonly HmSerializer _bodySerializer = new HmSerializer();
 
@@ -28,114 +14,105 @@ namespace HmLib.Binary
         {
         }
 
-        public void WriteRequest(Stream outputStream, Request request)
+        public void WriteRequest(IMessageBuilder output, Request request)
         {
-            var messageBuilder = CreateMessageBuilder(outputStream);
+            output.BeginMessage(MessageType.Request);
 
-            messageBuilder.BeginMessage(MessageType.Request);
+            SerializeHeaders(output, request.Headers);
 
-            SerializeHeaders(messageBuilder, request.Headers);
+            SerializeContent(output, request.Method, request.Parameters);
 
-            SerializeContent(messageBuilder, request.Method, request.Parameters);
-
-            messageBuilder.EndMessage();
+            output.EndMessage();
         }
 
-        public void ReadRequest(HmBinaryReader input, IMessageBuilder messageBuilder)
+        public void ReadRequest(IMessageReader input, IMessageBuilder output)
         {
-            var streamReader = (IHmStreamReader)input;
-            var reader = (IMessageReader)input;
-
-            if (!reader.Read())
+            if (!input.Read())
             {
                 throw new ProtocolException("Packet Header not recognized.");
             }
 
-            if (reader.MessageType != MessageType.Request)
+            if (input.MessageType != MessageType.Request)
             {
                 throw new ProtocolException("Expected request.");
             }
 
-            messageBuilder.BeginMessage(MessageType.Request);
-            reader.Read();
-            if (reader.MessagePart == HmMessagePart.Headers)
+            output.BeginMessage(MessageType.Request);
+            input.Read();
+            if (input.MessagePart == HmMessagePart.Headers)
             {
-                ReadHeaders(reader, messageBuilder);
+                ConvertHeaders(input, output);
             }
 
-            messageBuilder.BeginContent();
-            reader.Read();
-            messageBuilder.SetMethod(reader.Value);
+            output.BeginContent();
+            input.Read();
+            output.SetMethod(input.StringValue);
 
-            ReadArray(streamReader, messageBuilder);
-            messageBuilder.EndContent();
-            messageBuilder.EndMessage();
+            input.Read();
+            ReadArrayContent(input, output);
 
-            if (input.BytesRead > int.MaxValue)
+            output.EndContent();
+            output.EndMessage();
+
+            if(input.MessagePart != HmMessagePart.EndOfFile)
             {
-                throw new ProtocolException("The response message is too large to handle.");
+                throw new ProtocolException("Expected EndOfFile");
             }
 
-            messageBuilder.EndMessage();
+            output.EndMessage();
         }
 
-        public void WriteErrorResponse(Stream outputStream, string errorMessage)
+        public void WriteErrorResponse(IMessageBuilder output, string errorMessage)
         {
-            var messageBuilder = CreateMessageBuilder(outputStream);
-
-            messageBuilder.BeginMessage(MessageType.Error);
+            output.BeginMessage(MessageType.Error);
 
             var response = new Dictionary<string, object> { { "faultCode", -10 }, { "faultString", errorMessage } };
-            messageBuilder.BeginContent();
-            _bodySerializer.Serialize(messageBuilder, response);
-            messageBuilder.EndContent();
+            output.BeginContent();
+            _bodySerializer.Serialize(output, response);
+            output.EndContent();
 
-            messageBuilder.EndMessage();
+            output.EndMessage();
         }
 
-        public void WriteResponse(Stream outputStream, object response)
+        public void WriteResponse(IMessageBuilder output, object response)
         {
-            var messageBuilder = CreateMessageBuilder(outputStream);
-
-            messageBuilder.BeginMessage(MessageType.Response);
-            messageBuilder.BeginContent();
-            _bodySerializer.Serialize(messageBuilder, response);
-            messageBuilder.EndContent();
-            messageBuilder.EndMessage();
+            output.BeginMessage(MessageType.Response);
+            output.BeginContent();
+            _bodySerializer.Serialize(output, response);
+            output.EndContent();
+            output.EndMessage();
         }
 
-        public void ReadResponse(Stream inputStream, IMessageBuilder output)
+        public void ReadResponse(IMessageReader input, IMessageBuilder output)
         {
-            var binaryReader = new HmBinaryReader(inputStream);
-            var streamReader = (IHmStreamReader)binaryReader;
-            var reader = (IMessageReader)binaryReader;
-
-            if (!reader.Read())
+            if (!input.Read())
             {
                 throw new ProtocolException("Packet Header not recognized.");
             }
-            if (reader.MessageType == MessageType.Request)
+            if (input.MessageType == MessageType.Request)
             {
                 throw new ProtocolException("Expected response.");
             }
 
-            output.BeginMessage(reader.MessageType);
-            reader.Read();
-            if (reader.MessagePart == HmMessagePart.Headers)
+            output.BeginMessage(input.MessageType);
+            input.Read();
+            if (input.MessagePart == HmMessagePart.Headers)
             {
-                ReadHeaders(reader, output);
+                ConvertHeaders(input, output);
             }
 
             output.BeginContent();
-            if (reader.MessagePart != HmMessagePart.EndOfFile)
+            if (input.MessagePart != HmMessagePart.EndOfFile)
             {
-                ReadResponse(streamReader, output);
+                input.Read();
+                ReadValue(input, output);
             }
             output.EndContent();
+            output.EndMessage();
 
-            if (binaryReader.BytesRead > int.MaxValue)
+            if (input.MessagePart != HmMessagePart.EndOfFile)
             {
-                throw new ProtocolException("The response message is too large to handle.");
+                throw new ProtocolException("Expected EndOfFile");
             }
 
             return;
@@ -165,66 +142,63 @@ namespace HmLib.Binary
             builder.EndContent();
         }
 
-        private void ReadHeaders(IMessageReader reader, IMessageBuilder output)
+        private void ConvertHeaders(IMessageReader input, IMessageBuilder output)
         {
-            var headerCount = reader.HeaderCount;
+            var headerCount = input.CollectionCount;
             output.BeginHeaders(headerCount);
 
             for (; headerCount > 0; headerCount--)
             {
-                reader.Read();
-                output.WriteHeader(reader.Key, reader.Value);
+                input.Read();
+                output.WriteHeader(input.PropertyName, input.StringValue);
             }
             output.EndHeaders();
         }
 
 
 
-        private void ReadResponse(IHmStreamReader reader, IObjectBuilder builder)
+        private void ReadValue(IMessageReader reader, IObjectBuilder builder)
         {
-            var type = reader.ReadContentType();
-
-            switch (type)
+            switch (reader.ValueType)
             {
                 case ContentType.Array:
-                    ReadArray(reader, builder);
+                    ReadArrayContent(reader, builder);
                     break;
                 case ContentType.Struct:
-                    ReadStruct(reader, builder);
+                    ReadStructContent(reader, builder);
                     break;
                 case ContentType.Int:
-                    builder.WriteInt32Value(reader.ReadInt32());
+                    builder.WriteInt32Value(reader.IntValue);
                     break;
                 case ContentType.Boolean:
-                    builder.WriteBooleanValue(reader.ReadBoolean());
+                    builder.WriteBooleanValue(reader.BooleanValue);
                     break;
                 case ContentType.String:
-                    builder.WriteStringValue(reader.ReadString());
+                    builder.WriteStringValue(reader.StringValue);
                     break;
                 case ContentType.Float:
-                    builder.WriteDoubleValue(reader.ReadDouble());
+                    builder.WriteDoubleValue(reader.DoubleValue);
                     break;
                 case ContentType.Base64:
-                    builder.WriteBase64String(reader.ReadString());
+                    builder.WriteBase64String(reader.StringValue);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        private void ReadStruct(IHmStreamReader reader, IObjectBuilder builder)
+        private void ReadStructContent(IMessageReader reader, IObjectBuilder builder)
         {
-            var elementCount = reader.ReadInt32();
-            builder.BeginStruct(elementCount);
+            var elementCount = reader.CollectionCount;
+            builder.BeginStruct(reader.CollectionCount);
 
             for (; elementCount > 0; elementCount--)
             {
                 builder.BeginItem();
+                reader.Read();
+                builder.WritePropertyName(reader.PropertyName);
 
-                var propertyName = reader.ReadString();
-                builder.WritePropertyName(propertyName);
-
-                ReadResponse(reader, builder);
+                ReadValue(reader, builder);
 
                 builder.EndItem();
             }
@@ -232,23 +206,22 @@ namespace HmLib.Binary
             builder.EndStruct();
         }
 
-        private void ReadArray(IHmStreamReader reader, IObjectBuilder builder)
-        {
-            var itemCount = reader.ReadInt32();
 
-            builder.BeginArray(itemCount);
+        private void ReadArrayContent(IMessageReader reader, IObjectBuilder builder)
+        {
+            builder.BeginArray(reader.CollectionCount);
+
+            var itemCount = reader.CollectionCount;
+
             for (; itemCount > 0; itemCount--)
             {
                 builder.BeginItem();
-                ReadResponse(reader, builder);
+                reader.Read();
+                ReadValue(reader, builder);
                 builder.EndItem();
             }
             builder.EndArray();
         }
 
-        private static IMessageBuilder CreateMessageBuilder(Stream output)
-        {
-            return new HmBinaryMessageWriter(output);
-        }
     }
 }

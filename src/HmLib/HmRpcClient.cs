@@ -55,12 +55,14 @@ namespace HmLib
 
             var networkStream = _tcpClient.GetStream();
 
-            _protocol.WriteRequest(networkStream, request);
+            var streamWriter = new HmBinaryMessageWriter(networkStream);
+            _protocol.WriteRequest(streamWriter, request);
 
             Thread.Sleep(100);
 
             var responseBuilder = new MessageBuilder();
-            _protocol.ReadResponse(networkStream, responseBuilder);
+            var streamReader = new HmBinaryMessageReader(networkStream);
+            _protocol.ReadResponse(streamReader, responseBuilder);
 
             var response = (Response)responseBuilder.Result;
 

@@ -2,7 +2,7 @@
 {
     public class Response : Message
     {
-        public Response() : base(Serialization.MessageType.Response)
+        public Response() : base(MessageType.Response)
         {
 
         }

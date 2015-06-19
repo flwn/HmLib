@@ -64,13 +64,13 @@ namespace HmLib
 
             using (var stream = tcpClient.GetStream())
             {
-                var protocol = new HmLib.Binary.HmBinaryProtocol();
+                var protocol = new HmBinaryProtocol();
 
                 var alreadyWrittenToResponse = false;
                 try
                 {
                     var messageBuilder = new Serialization.MessageBuilder();
-                    var messageReader = new Binary.HmBinaryReader(stream);
+                    var messageReader = new Binary.HmBinaryMessageReader(stream);
                     protocol.ReadRequest(messageReader, messageBuilder);
 
                     var request = (Request)messageBuilder.Result;
@@ -97,7 +97,7 @@ namespace HmLib
                     //buffer for robustness.
                     using (var buffer = new MemoryStream())
                     {
-                        protocol.WriteResponse(buffer, response);
+                        protocol.WriteResponse(new Binary.HmBinaryMessageWriter(buffer), response);
                         alreadyWrittenToResponse = true;
                         var bufferArray = buffer.ToArray();
 
@@ -111,7 +111,7 @@ namespace HmLib
                     Console.WriteLine("Protocol Error: {0}", protocolException);
                     Console.ResetColor();
                     //do not write error if already written to stream...
-                    protocol.WriteErrorResponse(stream, protocolException.Message);
+                    protocol.WriteErrorResponse(new Binary.HmBinaryMessageWriter(stream), protocolException.Message);
                 }
                 catch (Exception ex)
                 {

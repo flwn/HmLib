@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace HmLib
 {
     public class Request : Message
     {
 
-        public Request() : base (Serialization.MessageType.Request)
+        public Request() : base (MessageType.Request)
         {
             Headers = new Dictionary<string, string>();
             Parameters = new List<object>();

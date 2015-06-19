@@ -4,9 +4,7 @@ using System.Text;
 
 namespace HmLib.Binary
 {
-    using Serialization;
-
-    public class HmBinaryMessageWriter : IDisposable, IMessageBuilder
+    public class HmBinaryMessageWriter : IDisposable, Serialization.IMessageBuilder
     {
         private static readonly byte[] PacketHeader = Encoding.ASCII.GetBytes("Bin");
 

@@ -1,4 +1,4 @@
-﻿namespace HmLib.Serialization
+﻿namespace HmLib
 {
     public enum MessageType
     {

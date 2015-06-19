@@ -19,12 +19,20 @@ namespace HmLib.Serialization
         bool Read();
 
         HmMessagePart MessagePart { get; }
+
         MessageType MessageType { get; }
 
+        int CollectionCount { get; }
 
-        int HeaderCount { get; }
-        string Key { get; }
-        string Value { get; }
+        string PropertyName { get; }
+
+        string StringValue { get; }
+
+        int IntValue { get; }
+
+        double DoubleValue { get;  }
+
+        bool BooleanValue { get; }
 
         ContentType? ValueType { get; }
 

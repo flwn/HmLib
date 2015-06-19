@@ -40,7 +40,7 @@ namespace HmLib.Binary
             WriteRaw(endianCorrectValue);
         }
 
-        public void Write(Serialization.ContentType contentType)
+        public void Write(ContentType contentType)
         {
             Write((int)contentType);
         }
