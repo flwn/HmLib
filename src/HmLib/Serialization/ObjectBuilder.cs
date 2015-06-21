@@ -89,7 +89,7 @@ namespace HmLib.Serialization
 
         public void WriteBase64String(string base64String)
         {
-            throw new NotImplementedException();
+            throw new NotImplementedException("CANNOT WRITE BASE64 STRING");
         }
 
         public void WriteBooleanValue(bool value)

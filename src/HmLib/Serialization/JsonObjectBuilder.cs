@@ -103,7 +103,7 @@ namespace HmLib.Serialization
             var currentState = Peek();
             if (currentState != BuilderState.Struct && currentState != BuilderState.Array)
             {
-                throw new InvalidOperationException("Invalid state.");
+                throw new InvalidOperationException(string.Format("Invalid state, current state is {0} instead of the expected Struct Or Array.", currentState));
             }
 
             if (_firstObjectItemWritten[_firstObjectItemWritten.Count - 1])
@@ -125,9 +125,10 @@ namespace HmLib.Serialization
 
         public void WritePropertyName(string name)
         {
-            if (Peek() != BuilderState.Item)
+            var state = Peek();
+            if (state != BuilderState.Item)
             {
-                throw new InvalidOperationException("Invalid state.");
+                throw new InvalidOperationException(string.Format("Invalid State: cannot write property name while not in Item state (current state={0}).", state));
             }
 
             _writer.Write(Quote);
@@ -179,9 +180,10 @@ namespace HmLib.Serialization
 
         private BuilderState Pop(BuilderState expectedState)
         {
-            if (Peek() != expectedState)
+            var currentState = Peek();
+            if (currentState != expectedState)
             {
-                throw new InvalidOperationException("Invalid state.");
+                throw new InvalidOperationException(string.Format("Invalid state: current state is {0} but {1} was expected.", currentState, expectedState));
             }
 
             var lastState = _state.Pop();
@@ -199,7 +201,7 @@ namespace HmLib.Serialization
         {
             if (_state.Count == 0)
             {
-                throw new InvalidOperationException("Invalid state.");
+                throw new InvalidOperationException("Invalid state: trying to peek while not in an Array, Struct or Item.");
             }
             return _state.Peek();
         }

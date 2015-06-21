@@ -7,12 +7,32 @@
         public void BeginMessage(MessageType messageType)
         {
             Result = Message.Create(messageType);
+
+#if DEBUG
+            var count = 2;
+            if (messageType == MessageType.Request) count++;
+            Debug.BeginStruct(count);
+            Debug.BeginItem();
+            Debug.WritePropertyName("messageType");
+            Debug.WriteStringValue(messageType.ToString());
+            Debug.EndItem();
+#endif
         }
-        public void EndMessage() { }
+        public void EndMessage() {
+#if DEBUG
+            Debug.EndStruct();
+#endif
+        }
 
         public void SetMethod(string method)
         {
             ((Request)Result).Method = method;
+#if DEBUG
+            Debug.WriteStringValue(method);
+            Debug.EndItem();
+            Debug.BeginItem();
+            Debug.WritePropertyName("params");
+#endif
         }
 
         public void BeginHeaders(int headerCount)
@@ -30,10 +50,18 @@
 
         public void BeginContent()
         {
+#if DEBUG
+            Debug.BeginItem();
+            var propName = Result.Type == MessageType.Request ? "method" : "content";
+            Debug.WritePropertyName(propName);
+#endif
         }
 
         public void EndContent()
         {
+#if DEBUG
+            Debug.EndItem();
+#endif
             if (Result.Type == MessageType.Request)
             {
                 var request = (Request)Result;
