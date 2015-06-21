@@ -41,11 +41,12 @@ namespace HmLib.CommandLine
             }
             catch (Exception ex)
             {
+                Debug.WriteLine(ex.Message, (object)ex.ToString());
                 Console.WriteLine(ex.ToString());
+                Console.ReadLine();
             }
             //s.Wait();
 
-            Console.ReadLine();
             listener.Dispose();
         }
         public static async Task Test()
@@ -78,8 +79,12 @@ namespace HmLib.CommandLine
                 //var response_ = await proxy.MultiCall(req1_, req2_, req3_, req4_, req5_);
                 //return;
 
-                var pong = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "TEST-" + DateTime.Now.ToString("hhmm"), 0 } });
+                var pong = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "TEST-" + DateTime.Now.ToString("hhmm", System.Globalization.CultureInfo.GetCultureInfo("nl-NL")), 0 } });
                 Console.WriteLine(pong);
+
+                Console.ReadLine();
+                var deInit = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "" /* "TEST-" + DateTime.Now.ToString("hhmm")*/, 0 } });
+
 
                 return;
 

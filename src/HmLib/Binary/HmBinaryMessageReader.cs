@@ -90,9 +90,11 @@ namespace HmLib.Binary
         private int _itemsToWrite;
         private void BeginCollection()
         {
+            //store current state
+            _collectionDepth.Push(Tuple.Create(_readStructKeys, _itemsToWrite));
+
             _itemsToWrite = CollectionCount;
             _readStructKeys = ValueType == ContentType.Struct;
-            _collectionDepth.Push(Tuple.Create(_readStructKeys, _itemsToWrite));
         }
         private void EndItem()
         {
@@ -102,6 +104,7 @@ namespace HmLib.Binary
                 var tmp = _collectionDepth.Pop();
                 _readStructKeys = tmp.Item1;
                 _itemsToWrite = tmp.Item2;
+                EndItem();
             }
         }
 

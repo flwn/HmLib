@@ -58,8 +58,6 @@ namespace HmLib
             {
                 throw new ProtocolException("Expected EndOfFile");
             }
-
-            output.EndMessage();
         }
 
         public void WriteErrorResponse(IMessageBuilder output, string errorMessage)
