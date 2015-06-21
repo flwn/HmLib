@@ -79,6 +79,9 @@ namespace HmLib
 
                     switch (request.Method)
                     {
+                        case "newDevices":
+                            response = string.Empty;
+                            break;
                         case "listDevices":
                             response = new List<object>(0);
                             break;

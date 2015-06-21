@@ -50,7 +50,10 @@ namespace HmLib.Binary
             }
 
             var expected = (int)streamReader.BytesRead + contentLength;
-
+            if(contentLength == 0)
+            {
+                return outB.ToString();
+            }
             return tokenize(streamReader, outB, state, expected, false);
         }
         private static string tokenize(HmBinaryStreamReader r, StringBuilder outB, int state, int expected, bool returnAfterLoop)

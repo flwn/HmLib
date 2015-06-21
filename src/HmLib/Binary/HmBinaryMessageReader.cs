@@ -86,24 +86,24 @@ namespace HmLib.Binary
         }
 
         private Stack<Tuple<bool, int>> _collectionDepth = new Stack<Tuple<bool, int>>();
-        private bool _readStructKeys;
-        private int _itemsToWrite;
+        private bool _readKeyValuePairs;
+        private int _itemsToReadInCurrentCollection;
         private void BeginCollection()
         {
             //store current state
-            _collectionDepth.Push(Tuple.Create(_readStructKeys, _itemsToWrite));
+            _collectionDepth.Push(Tuple.Create(_readKeyValuePairs, _itemsToReadInCurrentCollection));
 
-            _itemsToWrite = CollectionCount;
-            _readStructKeys = ValueType == ContentType.Struct;
+            _itemsToReadInCurrentCollection = CollectionCount;
+            _readKeyValuePairs = ValueType == ContentType.Struct;
         }
         private void EndItem()
         {
-            _itemsToWrite--;
-            if (_itemsToWrite == 0)
+            _itemsToReadInCurrentCollection--;
+            if (_itemsToReadInCurrentCollection == 0)
             {
                 var tmp = _collectionDepth.Pop();
-                _readStructKeys = tmp.Item1;
-                _itemsToWrite = tmp.Item2;
+                _readKeyValuePairs = tmp.Item1;
+                _itemsToReadInCurrentCollection = tmp.Item2;
                 EndItem();
             }
         }
@@ -112,6 +112,25 @@ namespace HmLib.Binary
         {
             switch (MessagePart)
             {
+
+                case HmMessagePart.Body:
+                    var bodyRead = (int)_stream.BytesRead - _bodyOffset;
+                    if (bodyRead >= _expectedBodyLength)
+                    {
+                        _reader = ErrorReader;
+                        throw new InvalidOperationException("Read more than expected.");
+                    }
+
+                    ReadBody();
+
+                    bodyRead = (int)_stream.BytesRead - _bodyOffset;
+                    if (bodyRead < _expectedBodyLength)
+                    {
+                        return true;
+                    }
+
+                    MoveToEof();
+                    return false;
                 case HmMessagePart.Message:
                     if (_containsHeaders)
                     {
@@ -144,76 +163,6 @@ namespace HmLib.Binary
                     MoveToContent();
 
                     return true;
-
-                case HmMessagePart.Body:
-
-                    var bodyRead = (int)_stream.BytesRead - _bodyOffset;
-
-                    if (bodyRead >= _expectedBodyLength)
-                    {
-                        _reader = ErrorReader;
-                        throw new InvalidOperationException("asdasdas");
-                    }
-
-                    switch (_bodyState)
-                    {
-                        case BodyState.RequestMethod:
-                            ValueType = ContentType.String;
-                            StringValue = _stream.ReadString();
-                            _bodyState = BodyState.RequestParameters;
-                            break;
-                        case BodyState.RequestParameters:
-                            ValueType = ContentType.Array;
-                            CollectionCount = _stream.ReadInt32();
-                            _bodyState = BodyState.Content;
-                            BeginCollection();
-                            break;
-                        case BodyState.Content:
-                            if (_readStructKeys)
-                            {
-                                PropertyName = _stream.ReadString();
-                            }
-
-                            ValueType = _stream.ReadContentType();
-                            if (ValueType == ContentType.Array || ValueType == ContentType.Struct)
-                            {
-                                CollectionCount = _stream.ReadInt32();
-                                BeginCollection();
-                            }
-                            else if (ValueType == ContentType.String || ValueType == ContentType.Base64)
-                            {
-                                StringValue = _stream.ReadString();
-                                EndItem();
-                            }
-                            else if (ValueType == ContentType.Int)
-                            {
-                                IntValue = _stream.ReadInt32();
-                                EndItem();
-                            }
-                            else if (ValueType == ContentType.Float)
-                            {
-                                DoubleValue = _stream.ReadDouble();
-                                EndItem();
-                            }
-                            else if (ValueType == ContentType.Boolean)
-                            {
-                                BooleanValue = _stream.ReadBoolean();
-                                EndItem();
-                            }
-                            else
-                            {
-                                throw new NotImplementedException();
-                            }
-
-                            break;
-                    }
-                    bodyRead = (int)_stream.BytesRead - _bodyOffset;
-                    if (bodyRead < _expectedBodyLength)
-                    {
-                        return true;
-                    }
-                    MoveToEof();
-                    return false;
             }
             return false;
         }
@@ -225,6 +174,66 @@ namespace HmLib.Binary
             ValueType = ContentType.String;
             StringValue = _stream.ReadString();
         }
+
+        private void ReadBody()
+        {
+            //todo: implement yield return...
+            if (_bodyState == BodyState.Content)
+            {
+                if (_readKeyValuePairs)
+                {
+                    PropertyName = _stream.ReadString();
+                }
+
+                ValueType = _stream.ReadContentType();
+
+                if (ValueType == ContentType.Array || ValueType == ContentType.Struct)
+                {
+                    CollectionCount = _stream.ReadInt32();
+                    BeginCollection();
+                    return;
+                }
+
+                if (ValueType == ContentType.String || ValueType == ContentType.Base64)
+                {
+                    StringValue = _stream.ReadString();
+                }
+                else if (ValueType == ContentType.Int)
+                {
+                    IntValue = _stream.ReadInt32();
+                }
+                else if (ValueType == ContentType.Float)
+                {
+                    DoubleValue = _stream.ReadDouble();
+                }
+                else if (ValueType == ContentType.Boolean)
+                {
+                    BooleanValue = _stream.ReadBoolean();
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+
+                EndItem();
+                return;
+            }
+
+            if (_bodyState == BodyState.RequestMethod)
+            {
+                ValueType = ContentType.String;
+                StringValue = _stream.ReadString();
+                _bodyState = BodyState.RequestParameters;
+                return;
+            }
+
+            //params
+            ValueType = ContentType.Array;
+            CollectionCount = _stream.ReadInt32();
+            _bodyState = BodyState.Content;
+            BeginCollection();
+        }
+
 
         private bool ReadPacketType()
         {
