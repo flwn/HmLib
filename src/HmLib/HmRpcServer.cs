@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace HmLib
@@ -14,10 +14,7 @@ namespace HmLib
         private readonly Func<Request, Response> _requestHandler;
         private readonly TcpListener _listener;
 
-        private ManualResetEventSlim _acceptWaiter = new ManualResetEventSlim();
-
         private Task _listenerTask;
-        private readonly List<TcpClient> _connections = new List<TcpClient>();
 
         public HmRpcServer(Func<Request, Response> requestHandler)
         {
@@ -82,12 +79,16 @@ namespace HmLib
 
                     switch (request.Method)
                     {
+                        case "listDevices":
+                            response = new List<object>(0);
+                            break;
                         case "system.listMethods":
                             response = new List<object> { "system.multicall" };
                             break;
                         case "system.multicall":
                             var parameters = (ICollection<object>)request.Parameters.First();
                             response = new List<object>(parameters.Select(x => ""));
+                            response = string.Empty;
                             break;
                         default:
                             response = null;
@@ -101,8 +102,12 @@ namespace HmLib
                         alreadyWrittenToResponse = true;
                         var bufferArray = buffer.ToArray();
 
+                        if (Debugger.IsAttached)
+                        {
+                            Debug.WriteLine("Write response (Length={0} bytes): {1}", bufferArray.Length, Binary.Utils.Tokenize(bufferArray));
+                        }
+
                         await stream.WriteAsync(bufferArray, 0, bufferArray.Length);
-                        //buffer.WriteTo(stream);
                     }
                 }
                 catch (ProtocolException protocolException) when (!alreadyWrittenToResponse)
@@ -115,6 +120,7 @@ namespace HmLib
                 }
                 catch (Exception ex)
                 {
+                    Debug.WriteLine("Error handling request. {0}", ex);
                     Console.ForegroundColor = ConsoleColor.DarkRed;
                     Console.WriteLine("Error: {0}", ex);
                     Console.ResetColor();
@@ -138,10 +144,17 @@ namespace HmLib
                 await connectionTask;
                 // we may be on another thread after "await"
             }
+            catch (AggregateException aggEx)
+            {
+                var ex = aggEx.InnerException;
+                Debug.Fail(ex.Message, ex.ToString());
+
+                Console.WriteLine("Error handling connection: " + ex.ToString());
+            }
             catch (Exception ex)
             {
                 // log the error
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Error handling connection: " + ex.ToString());
             }
         }
 
