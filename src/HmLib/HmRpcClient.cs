@@ -8,6 +8,7 @@ namespace HmLib
 {
     using Binary;
     using Serialization;
+    using System.IO;
 
     public class HmRpcClient : IDisposable
     {
@@ -53,16 +54,24 @@ namespace HmLib
                 throw new InvalidOperationException("Connect first.");
             }
 
-            var networkStream = _tcpClient.GetStream();
 
-            var streamWriter = new HmBinaryMessageWriter(networkStream);
+            var requestBuffer = new MemoryStream();
+            var streamWriter = new HmBinaryMessageWriter(requestBuffer);
             _protocol.WriteRequest(streamWriter, request);
 
-            Thread.Sleep(100);
-
             var responseBuilder = new MessageBuilder();
-            var streamReader = new HmBinaryMessageReader(networkStream);
-            _protocol.ReadResponse(streamReader, responseBuilder);
+            using (var networkStream = _tcpClient.GetStream())
+            {
+                requestBuffer.Position = 0;
+                await requestBuffer.CopyToAsync(networkStream);
+
+                Thread.Sleep(100);
+
+                //todo: implement buffered reader
+                var streamReader = new HmBinaryMessageReader(networkStream);
+
+                _protocol.ReadResponse(streamReader, responseBuilder);
+            }
 
             var response = (Response)responseBuilder.Result;
 
