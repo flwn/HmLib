@@ -7,25 +7,20 @@ namespace HmLib
 
     public class RequestResponseProtocol : IProtocol
     {
-
         private readonly HmSerializer _bodySerializer = new HmSerializer();
-
-        public RequestResponseProtocol()
-        {
-        }
 
         public void WriteRequest(IMessageBuilder output, Request request)
         {
-            output.BeginMessage(MessageType.Request);
-
-            SerializeHeaders(output, request.Headers);
-
-            SerializeContent(output, request.Method, request.Parameters);
-
-            output.EndMessage();
+            var requestReader = new MessageReader(request);
+            ConvertRequest(requestReader, output);
         }
 
         public void ReadRequest(IMessageReader input, IMessageBuilder output)
+        {
+            ConvertRequest(input, output);
+        }
+
+        private void ConvertRequest(IMessageReader input, IMessageBuilder output)
         {
             if (!input.Read())
             {
@@ -37,14 +32,17 @@ namespace HmLib
                 throw new ProtocolException("Expected request.");
             }
 
-            output.BeginMessage(MessageType.Request);
+            output.BeginMessage(input.MessageType);
+
             input.Read();
             if (input.MessagePart == HmMessagePart.Headers)
             {
                 ConvertHeaders(input, output);
+                input.Read();
             }
 
             output.BeginContent();
+
             input.Read();
             output.SetMethod(input.StringValue);
 
@@ -54,11 +52,14 @@ namespace HmLib
             output.EndContent();
             output.EndMessage();
 
-            if(input.MessagePart != HmMessagePart.EndOfFile)
+            input.Read();
+            if (input.MessagePart != HmMessagePart.EndOfFile)
             {
                 throw new ProtocolException("Expected EndOfFile");
             }
         }
+
+
 
         public void WriteErrorResponse(IMessageBuilder output, string errorMessage)
         {
@@ -108,6 +109,7 @@ namespace HmLib
             output.EndContent();
             output.EndMessage();
 
+            input.Read();
             if (input.MessagePart != HmMessagePart.EndOfFile)
             {
                 throw new ProtocolException("Expected EndOfFile");
@@ -117,28 +119,6 @@ namespace HmLib
 
         }
 
-
-
-
-        private void SerializeHeaders(IMessageBuilder builder, IDictionary<string, string> headerDictionary)
-        {
-            builder.BeginHeaders(headerDictionary.Count);
-            foreach (var header in headerDictionary)
-            {
-                builder.WriteHeader(header.Key, header.Value);
-            }
-            builder.EndHeaders();
-        }
-
-        private void SerializeContent(IMessageBuilder builder, string methodName, ICollection<object> parameters)
-        {
-            builder.BeginContent();
-            builder.SetMethod(methodName);
-
-            _bodySerializer.Serialize(builder, parameters);
-
-            builder.EndContent();
-        }
 
         private void ConvertHeaders(IMessageReader input, IMessageBuilder output)
         {

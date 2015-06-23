@@ -56,6 +56,7 @@
     <Compile Include="Binary\HmBinaryMessageWriterTests.cs" />
     <Compile Include="Binary\BinaryProtocolTests.cs" />
     <Compile Include="Binary\HmBitConverterTests.cs" />
+    <Compile Include="Serialization\MessageReaderTests.cs" />
     <Compile Include="Serialization\ObjectBuilderTests.cs" />
     <Compile Include="_Infrastructure\ParameterizedTestConvention.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

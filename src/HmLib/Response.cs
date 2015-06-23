@@ -7,7 +7,7 @@
 
         }
 
-        public object Content { get; set; }
+        public virtual object Content { get; set; }
 
         public override string ToString()
         {
