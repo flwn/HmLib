@@ -19,14 +19,6 @@ namespace HmLib.Binary
 
         private readonly HmBinaryStreamReader _stream;
 
-        private enum BodyState
-        {
-            RequestMethod,
-            RequestParameters,
-            Content,
-        }
-        private BodyState _bodyState;
-
         public HmBinaryMessageReader(Stream input)
         {
             _reader = InitialReader;
@@ -42,8 +34,7 @@ namespace HmLib.Binary
         private int _headersRead = 0;
         private int _headerOffset;
 
-        private int _expectedBodyLength;
-        private int _bodyOffset;
+        private int _expectedBodyEnd;
 
         public int CollectionCount { get; private set; }
 
@@ -112,25 +103,18 @@ namespace HmLib.Binary
         {
             switch (MessagePart)
             {
-
                 case HmMessagePart.Body:
-                    var bodyRead = (int)_stream.BytesRead - _bodyOffset;
-                    if (bodyRead >= _expectedBodyLength)
+                    if (_stream.BytesRead < _expectedBodyEnd)
                     {
-                        _reader = ErrorReader;
-                        throw new InvalidOperationException("Read more than expected.");
+                        ReadBody();
+                    }
+                    else
+                    {
+                        MoveToEof();
                     }
 
-                    ReadBody();
+                    return true;
 
-                    bodyRead = (int)_stream.BytesRead - _bodyOffset;
-                    if (bodyRead < _expectedBodyLength)
-                    {
-                        return true;
-                    }
-
-                    MoveToEof();
-                    return false;
                 case HmMessagePart.Message:
                     if (_containsHeaders)
                     {
@@ -175,63 +159,68 @@ namespace HmLib.Binary
             StringValue = _stream.ReadString();
         }
 
+        private IEnumerable<ContentType> ReadValueType()
+        {
+            if (MessageType == MessageType.Request)
+            {
+                //request method
+                yield return ContentType.String;
+
+                //request params
+                yield return ContentType.Array;
+            }
+
+            while (_expectedBodyEnd > _stream.BytesRead)
+            {
+                var contentType = _stream.ReadContentType();
+                yield return contentType;
+            }
+        }
+
         private void ReadBody()
         {
-            //todo: implement yield return...
-            if (_bodyState == BodyState.Content)
+            if (_readKeyValuePairs)
             {
-                if (_readKeyValuePairs)
-                {
-                    PropertyName = _stream.ReadString();
-                }
+                PropertyName = _stream.ReadString();
+            }
 
-                ValueType = _stream.ReadContentType();
-
-                if (ValueType == ContentType.Array || ValueType == ContentType.Struct)
-                {
-                    CollectionCount = _stream.ReadInt32();
-                    BeginCollection();
-                    return;
-                }
-
-                if (ValueType == ContentType.String || ValueType == ContentType.Base64)
-                {
-                    StringValue = _stream.ReadString();
-                }
-                else if (ValueType == ContentType.Int)
-                {
-                    IntValue = _stream.ReadInt32();
-                }
-                else if (ValueType == ContentType.Float)
-                {
-                    DoubleValue = _stream.ReadDouble();
-                }
-                else if (ValueType == ContentType.Boolean)
-                {
-                    BooleanValue = _stream.ReadBoolean();
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
-
-                EndItem();
+            if (!_typeReader.MoveNext())
+            {
+                MoveToEof();
                 return;
             }
 
-            if (_bodyState == BodyState.RequestMethod)
+            ValueType = _typeReader.Current;
+
+            if (ValueType == ContentType.Array || ValueType == ContentType.Struct)
             {
-                ValueType = ContentType.String;
+                CollectionCount = _stream.ReadInt32();
+                BeginCollection();
+                return;
+            }
+
+            if (ValueType == ContentType.String || ValueType == ContentType.Base64)
+            {
                 StringValue = _stream.ReadString();
-                _bodyState = BodyState.RequestParameters;
-                return;
+            }
+            else if (ValueType == ContentType.Int)
+            {
+                IntValue = _stream.ReadInt32();
+            }
+            else if (ValueType == ContentType.Float)
+            {
+                DoubleValue = _stream.ReadDouble();
+            }
+            else if (ValueType == ContentType.Boolean)
+            {
+                BooleanValue = _stream.ReadBoolean();
+            }
+            else
+            {
+                throw new NotImplementedException();
             }
 
-            //params
-            ValueType = ContentType.Array;
-            CollectionCount = _stream.ReadInt32();
-            _bodyState = BodyState.Content;
-            BeginCollection();
+            EndItem();
         }
 
 
@@ -273,9 +262,9 @@ namespace HmLib.Binary
             _reader = EndOfFileReader;
             MessagePart = HmMessagePart.EndOfFile;
 
-            if (_stream.BytesRead - _bodyOffset != _expectedBodyLength)
+            if (_stream.BytesRead != _expectedBodyEnd)
             {
-                throw new ProtocolException("The response is incomplete or corrupted.");
+                throw new ProtocolException(string.Format("The response is incomplete or corrupted. Expected {0} bytes, read {1} bytes.", _expectedBodyEnd, _stream.BytesRead));
             }
         }
 
@@ -288,26 +277,24 @@ namespace HmLib.Binary
             CollectionCount = _stream.ReadInt32();
         }
 
+        private IEnumerator<ContentType> _typeReader;
+
         private void MoveToContent()
         {
-            _expectedBodyLength = _stream.ReadInt32();
-            _bodyOffset = (int)_stream.BytesRead;
+            var expectedBodyLength = _stream.ReadInt32();
+            var bodyOffset = (int)_stream.BytesRead;
 
-            if (_expectedBodyLength == 0)
+            _expectedBodyEnd = bodyOffset + expectedBodyLength;
+
+            if (expectedBodyLength == 0)
             {
                 MoveToEof();
                 return;
             }
-            MessagePart = HmMessagePart.Body;
 
-            if (MessageType == MessageType.Request)
-            {
-                _bodyState = BodyState.RequestMethod;
-            }
-            else
-            {
-                _bodyState = BodyState.Content;
-            }
+            _typeReader = ReadValueType().GetEnumerator();
+
+            MessagePart = HmMessagePart.Body;
         }
 
 
