@@ -6,14 +6,17 @@ namespace HmLib.Serialization
 
     public class ObjectBuilder : IObjectBuilder
     {
-        public JsonMessageBuilder Debug = new JsonMessageBuilder();
+#if DEBUG
+        public SimpleJson.JsonMessageBuilder Debug = new SimpleJson.JsonMessageBuilder();
+#endif
 
         public ICollection<object> CollectionResult { get; private set; }
+
         public IDictionary<string, object> StructResult { get; private set; }
 
         public object SimpleResult { get; private set; }
 
-        private Stack<object> _current = new Stack<object>();
+        private Stack<object> _currentCollection = new Stack<object>();
 
         private Stack<Action<object>> _currentWriter = new Stack<Action<object>>();
 
@@ -29,12 +32,14 @@ namespace HmLib.Serialization
             });
         }
 
-        public void BeginArray(int? count = default(int?))
+        public void BeginArray(int count)
         {
+#if DEBUG
             Debug.BeginArray();
+#endif
 
-            var list = new List<object>(count ?? 0);
-            if (_current.Count == 0)
+            var list = new List<object>(count);
+            if (_currentCollection.Count == 0)
             {
                 CollectionResult = list;
             }
@@ -43,20 +48,24 @@ namespace HmLib.Serialization
                 WriteInternal(list);
             }
 
-            _current.Push(list);
+            _currentCollection.Push(list);
             _currentWriter.Push(x => list.Add(x));
         }
 
         public void BeginItem()
         {
+#if DEBUG
             Debug.BeginItem();
+#endif
         }
 
-        public void BeginStruct(int? count = null)
+        public void BeginStruct(int count)
         {
+#if DEBUG
             Debug.BeginStruct(count);
-            var dict = new Dictionary<string, object>(count ?? 0);
-            if (_current.Count == 0)
+#endif
+            var dict = new Dictionary<string, object>(count);
+            if (_currentCollection.Count == 0)
             {
                 StructResult = dict;
             }
@@ -64,26 +73,32 @@ namespace HmLib.Serialization
             {
                 WriteInternal(dict);
             }
-            _current.Push(dict);
+            _currentCollection.Push(dict);
         }
 
         public void EndArray()
         {
+#if DEBUG
             Debug.EndArray();
-            if (!(_current.Pop() is List<object>)) throw new InvalidOperationException("Expected list.");
+#endif
+            if (!(_currentCollection.Pop() is List<object>)) throw new InvalidOperationException("Expected list.");
 
             _currentWriter.Pop();
         }
 
         public void EndItem()
         {
+#if DEBUG
             Debug.EndItem();
+#endif
         }
 
         public void EndStruct()
         {
+#if DEBUG
             Debug.EndStruct();
-            if (!(_current.Pop() is Dictionary<string, object>)) throw new InvalidOperationException("Expected Dictionary.");
+#endif
+            if (!(_currentCollection.Pop() is Dictionary<string, object>)) throw new InvalidOperationException("Expected Dictionary.");
             _currentWriter.Pop();
         }
 
@@ -94,33 +109,43 @@ namespace HmLib.Serialization
 
         public void WriteBooleanValue(bool value)
         {
+#if DEBUG
             Debug.WriteBooleanValue(value);
+#endif
             WriteInternal(value);
         }
 
         public void WriteDoubleValue(double value)
         {
+#if DEBUG
             Debug.WriteDoubleValue(value);
+#endif
             WriteInternal(value);
         }
 
         public void WriteInt32Value(int value)
         {
+#if DEBUG
             Debug.WriteInt32Value(value);
+#endif
             WriteInternal(value);
         }
 
         public void WritePropertyName(string name)
         {
+#if DEBUG
             Debug.WritePropertyName(name);
-            var dict = (IDictionary<string, object>)_current.Peek();
+#endif
+            var dict = (IDictionary<string, object>)_currentCollection.Peek();
 
             _currentWriter.Push(x => dict[name] = x);
         }
 
         public void WriteStringValue(string value)
         {
+#if DEBUG
             Debug.WriteStringValue(value);
+#endif
             WriteInternal(value);
         }
 

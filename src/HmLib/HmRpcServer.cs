@@ -71,11 +71,12 @@ namespace HmLib
                     protocol.ReadRequest(messageReader, messageBuilder);
 
                     var request = (Request)messageBuilder.Result;
-
+#if DEBUG
                     System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
+                    Console.WriteLine(request);
+#endif
                     var response = (object)_requestHandler(request);
 
-                    Console.WriteLine(request);
 
                     switch (request.Method)
                     {
@@ -161,7 +162,7 @@ namespace HmLib
             }
         }
 
-        #region IDisposable Support
+#region IDisposable Support
         private bool isDisposed = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -185,7 +186,7 @@ namespace HmLib
         {
             Dispose(true);
         }
-        #endregion
+#endregion
 
 
 

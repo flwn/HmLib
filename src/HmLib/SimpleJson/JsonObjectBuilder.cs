@@ -3,45 +3,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 
-namespace HmLib.Serialization
+namespace HmLib.SimpleJson
 {
-    public class JsonMessageBuilder : JsonObjectBuilder, IMessageBuilder
-    {
-        public JsonMessageBuilder(TextWriter writer = null) : base(writer)
-        {
-        }
-
-
-        public void BeginMessage(MessageType messageType) { }
-        public void EndMessage()
-        {
-        }
-
-        private int HeaderCount { get; set; }
-
-        public void SetMethod(string method)
-        {
-        }
-        public void BeginHeaders(int headerCount)
-        {
-            HeaderCount = headerCount;
-        }
-        public void WriteHeader(string key, string value)
-        {
-
-        }
-        public void EndHeaders()
-        {
-
-        }
-
-        public void BeginContent()
-        {
-        }
-        public void EndContent()
-        {
-        }
-    }
+    using Serialization;
 
     public class JsonObjectBuilder : IObjectBuilder
     {
@@ -71,7 +35,7 @@ namespace HmLib.Serialization
             Push(BuilderState.Start);
         }
 
-        public void BeginStruct(int? count = null)
+        public void BeginStruct(int count)
         {
             Push(BuilderState.Struct);
 
@@ -84,7 +48,7 @@ namespace HmLib.Serialization
 
             _writer.Write("}");
         }
-        public void BeginArray(int? length = null)
+        public void BeginArray(int count)
         {
             Push(BuilderState.Array);
 

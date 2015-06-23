@@ -146,14 +146,9 @@ namespace HmLib.Binary
             FlushBufferedWriter();
         }
 
-        public void BeginArray(int? count = null)
+        public void BeginArray(int count)
         {
-            if (!count.HasValue)
-            {
-                throw new InvalidOperationException("Binary Message writer must known a collection count upfront.");
-            }
-
-            WriteComplexTypeHeader(ContentType.Array, count.Value);
+            WriteComplexTypeHeader(ContentType.Array, count);
         }
 
         public void BeginItem()
@@ -161,14 +156,9 @@ namespace HmLib.Binary
             _paramDepth++;
         }
 
-        public void BeginStruct(int? count = null)
+        public void BeginStruct(int count)
         {
-            if (!count.HasValue)
-            {
-                throw new InvalidOperationException("Binary Message writer must known a collection count upfront.");
-            }
-
-            WriteComplexTypeHeader(ContentType.Struct, count.Value);
+            WriteComplexTypeHeader(ContentType.Struct, count);
         }
 
         public void EndArray()

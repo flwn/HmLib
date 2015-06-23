@@ -2,9 +2,9 @@
 {
     public interface IObjectBuilder
     {
-        void BeginArray(int? count = null);
+        void BeginArray(int count);
         void BeginItem();
-        void BeginStruct(int? count = null);
+        void BeginStruct(int count);
         void EndArray();
         void EndItem();
         void EndStruct();
