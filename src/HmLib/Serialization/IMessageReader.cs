@@ -1,35 +1,18 @@
 ﻿namespace HmLib.Serialization
 {
-    public enum HmMessagePart
+    public enum ReadState
     {
-        None,
+        Initial,
         Message,
         Headers,
         Body,
         EndOfFile,
     }
-    public interface IMessageReader
+
+    public interface IMessageReader : IObjectReader
     {
-
-        bool Read();
-
-        HmMessagePart MessagePart { get; }
+        ReadState ReadState { get; }
 
         MessageType MessageType { get; }
-
-        int CollectionCount { get; }
-
-        string PropertyName { get; }
-
-        string StringValue { get; }
-
-        int IntValue { get; }
-
-        double DoubleValue { get;  }
-
-        bool BooleanValue { get; }
-
-        ContentType? ValueType { get; }
-
     }
 }

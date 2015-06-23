@@ -35,7 +35,7 @@ namespace HmLib
             output.BeginMessage(input.MessageType);
 
             input.Read();
-            if (input.MessagePart == HmMessagePart.Headers)
+            if (input.ReadState == ReadState.Headers)
             {
                 ConvertHeaders(input, output);
                 input.Read();
@@ -53,7 +53,7 @@ namespace HmLib
             output.EndMessage();
 
             input.Read();
-            if (input.MessagePart != HmMessagePart.EndOfFile)
+            if (input.ReadState != ReadState.EndOfFile)
             {
                 throw new ProtocolException("Expected EndOfFile");
             }
@@ -95,13 +95,13 @@ namespace HmLib
 
             output.BeginMessage(input.MessageType);
             input.Read();
-            if (input.MessagePart == HmMessagePart.Headers)
+            if (input.ReadState == ReadState.Headers)
             {
                 ConvertHeaders(input, output);
             }
 
             output.BeginContent();
-            if (input.MessagePart != HmMessagePart.EndOfFile)
+            if (input.ReadState != ReadState.EndOfFile)
             {
                 input.Read();
                 ReadValue(input, output);
@@ -110,7 +110,7 @@ namespace HmLib
             output.EndMessage();
 
             input.Read();
-            if (input.MessagePart != HmMessagePart.EndOfFile)
+            if (input.ReadState != ReadState.EndOfFile)
             {
                 throw new ProtocolException("Expected EndOfFile");
             }
@@ -119,19 +119,6 @@ namespace HmLib
 
         }
 
-
-        private void ConvertHeaders(IMessageReader input, IMessageBuilder output)
-        {
-            var headerCount = input.CollectionCount;
-            output.BeginHeaders(headerCount);
-
-            for (; headerCount > 0; headerCount--)
-            {
-                input.Read();
-                output.WriteHeader(input.PropertyName, input.StringValue);
-            }
-            output.EndHeaders();
-        }
 
 
 
@@ -167,39 +154,52 @@ namespace HmLib
 
         private void ReadStructContent(IMessageReader reader, IObjectBuilder builder)
         {
-            var elementCount = reader.CollectionCount;
-            builder.BeginStruct(reader.CollectionCount);
+            var elementCount = reader.ItemCount;
+            builder.BeginStruct(reader.ItemCount);
 
             for (; elementCount > 0; elementCount--)
             {
                 builder.BeginItem();
                 reader.Read();
+
                 builder.WritePropertyName(reader.PropertyName);
 
                 ReadValue(reader, builder);
-
                 builder.EndItem();
             }
 
             builder.EndStruct();
         }
 
-
         private void ReadArrayContent(IMessageReader reader, IObjectBuilder builder)
         {
-            builder.BeginArray(reader.CollectionCount);
 
-            var itemCount = reader.CollectionCount;
+            var itemCount = reader.ItemCount;
+            builder.BeginArray(itemCount);
 
             for (; itemCount > 0; itemCount--)
             {
                 builder.BeginItem();
                 reader.Read();
+
                 ReadValue(reader, builder);
                 builder.EndItem();
             }
+
             builder.EndArray();
         }
 
+        private void ConvertHeaders(IMessageReader input, IMessageBuilder output)
+        {
+            var headerCount = input.ItemCount;
+            output.BeginHeaders(headerCount);
+
+            for (; headerCount > 0; headerCount--)
+            {
+                input.Read();
+                output.WriteHeader(input.PropertyName, input.StringValue);
+            }
+            output.EndHeaders();
+        }
     }
 }

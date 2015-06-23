@@ -25,7 +25,7 @@ namespace HmLib.Binary
             _stream = new HmBinaryStreamReader(input);
         }
 
-        public HmMessagePart MessagePart { get; private set; }
+        public ReadState ReadState { get; private set; }
         public MessageType MessageType { get; private set; }
 
         private bool _containsHeaders;
@@ -36,7 +36,7 @@ namespace HmLib.Binary
 
         private int _expectedBodyEnd;
 
-        public int CollectionCount { get; private set; }
+        public int ItemCount { get; private set; }
 
         public string PropertyName { get; private set; }
         public string StringValue { get; private set; }
@@ -58,7 +58,7 @@ namespace HmLib.Binary
         {
             if (ReadPacketType())
             {
-                MessagePart = HmMessagePart.Message;
+                ReadState = ReadState.Message;
                 _reader = ReadInteractive;
                 return true;
             }
@@ -84,7 +84,7 @@ namespace HmLib.Binary
             //store current state
             _collectionDepth.Push(Tuple.Create(_readKeyValuePairs, _itemsToReadInCurrentCollection));
 
-            _itemsToReadInCurrentCollection = CollectionCount;
+            _itemsToReadInCurrentCollection = ItemCount;
             _readKeyValuePairs = ValueType == ContentType.Struct;
         }
         private void EndItem()
@@ -101,9 +101,9 @@ namespace HmLib.Binary
 
         private bool ReadInteractive()
         {
-            switch (MessagePart)
+            switch (ReadState)
             {
-                case HmMessagePart.Body:
+                case ReadState.Body:
                     if (_stream.BytesRead < _expectedBodyEnd)
                     {
                         ReadBody();
@@ -115,7 +115,7 @@ namespace HmLib.Binary
 
                     return true;
 
-                case HmMessagePart.Message:
+                case ReadState.Message:
                     if (_containsHeaders)
                     {
                         MoveToHeaders();
@@ -126,12 +126,12 @@ namespace HmLib.Binary
                     }
                     return true;
 
-                case HmMessagePart.Headers:
-                    if (_headersRead < CollectionCount)
+                case ReadState.Headers:
+                    if (_headersRead < ItemCount)
                     {
                         ReadHeader();
 
-                        if (_headersRead < CollectionCount)
+                        if (_headersRead < ItemCount)
                         {
                             return true;
                         }
@@ -194,7 +194,7 @@ namespace HmLib.Binary
 
             if (ValueType == ContentType.Array || ValueType == ContentType.Struct)
             {
-                CollectionCount = _stream.ReadInt32();
+                ItemCount = _stream.ReadInt32();
                 BeginCollection();
                 return;
             }
@@ -260,7 +260,7 @@ namespace HmLib.Binary
         private void MoveToEof()
         {
             _reader = EndOfFileReader;
-            MessagePart = HmMessagePart.EndOfFile;
+            ReadState = ReadState.EndOfFile;
 
             if (_stream.BytesRead != _expectedBodyEnd)
             {
@@ -270,11 +270,11 @@ namespace HmLib.Binary
 
         private void MoveToHeaders()
         {
-            MessagePart = HmMessagePart.Headers;
+            ReadState = ReadState.Headers;
 
             _expectedHeaderLength = _stream.ReadInt32();
             _headerOffset = (int)_stream.BytesRead;
-            CollectionCount = _stream.ReadInt32();
+            ItemCount = _stream.ReadInt32();
         }
 
         private IEnumerator<ContentType> _typeReader;
@@ -294,7 +294,7 @@ namespace HmLib.Binary
 
             _typeReader = ReadValueType().GetEnumerator();
 
-            MessagePart = HmMessagePart.Body;
+            ReadState = ReadState.Body;
         }
 
 

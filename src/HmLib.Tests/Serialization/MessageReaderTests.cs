@@ -24,12 +24,12 @@ namespace HmLib.Tests.Serialization
 
             //begin reading: read envelope
             reader.Read().ShouldBe(true);
-            reader.MessagePart.ShouldBe(HmMessagePart.Message);
+            reader.ReadState.ShouldBe(ReadState.Message);
             reader.MessageType.ShouldBe(MessageType.Request);
 
             //move to headers or body
             reader.Read().ShouldBe(true);
-            reader.MessagePart.ShouldBe(HmMessagePart.Body);
+            reader.ReadState.ShouldBe(ReadState.Body);
 
             //read body
             reader.Read().ShouldBe(true);
@@ -37,18 +37,18 @@ namespace HmLib.Tests.Serialization
             reader.StringValue.ShouldBe("test");
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.Array);
-            reader.CollectionCount.ShouldBe(2);
+            reader.ItemCount.ShouldBe(2);
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.String);
             reader.StringValue.ShouldBe("param1");
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.Array);
-            reader.CollectionCount.ShouldBe(1);
+            reader.ItemCount.ShouldBe(1);
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.String);
             reader.StringValue.ShouldBe("nested param");
             reader.Read().ShouldBe(true);
-            reader.MessagePart.ShouldBe(HmMessagePart.EndOfFile);
+            reader.ReadState.ShouldBe(ReadState.EndOfFile);
 
             reader.Read().ShouldBe(false);
         }

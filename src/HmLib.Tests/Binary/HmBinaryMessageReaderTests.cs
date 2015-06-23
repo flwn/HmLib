@@ -16,12 +16,14 @@ namespace HmLib.Tests.Binary
 
             var reader = new HmBinaryMessageReader(input);
 
+            reader.ReadState.ShouldBe(ReadState.Initial);
+
             reader.Read().ShouldBe(true);
-            reader.MessagePart.ShouldBe(HmMessagePart.Message);
+            reader.ReadState.ShouldBe(ReadState.Message);
             reader.MessageType.ShouldBe(MessageType.Request);
 
             reader.Read().ShouldBe(true);
-            reader.MessagePart.ShouldBe(HmMessagePart.Body);
+            reader.ReadState.ShouldBe(ReadState.Body);
 
             //read body
             reader.Read().ShouldBe(true);
@@ -29,18 +31,18 @@ namespace HmLib.Tests.Binary
             reader.StringValue.ShouldBe("newDevices");
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.Array);
-            reader.CollectionCount.ShouldBe(1);
+            reader.ItemCount.ShouldBe(1);
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.Array);
-            reader.CollectionCount.ShouldBe(2);
+            reader.ItemCount.ShouldBe(2);
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.Struct);
-            reader.CollectionCount.ShouldBe(2);
+            reader.ItemCount.ShouldBe(2);
 
             reader.Read().ShouldBe(true);
             reader.PropertyName.ShouldBe("CHILDREN");
             reader.ValueType.ShouldBe(ContentType.Array);
-            reader.CollectionCount.ShouldBe(3);
+            reader.ItemCount.ShouldBe(3);
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.String);
             reader.StringValue.ShouldBe("value 3");
@@ -60,7 +62,7 @@ namespace HmLib.Tests.Binary
 
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.Struct);
-            reader.CollectionCount.ShouldBe(3);
+            reader.ItemCount.ShouldBe(3);
             reader.Read().ShouldBe(true);
             reader.PropertyName.ShouldBe("ADDRESS");
             reader.ValueType.ShouldBe(ContentType.String);
@@ -69,7 +71,7 @@ namespace HmLib.Tests.Binary
             reader.Read().ShouldBe(true);
             reader.PropertyName.ShouldBe("CHILDREN");
             reader.ValueType.ShouldBe(ContentType.Array);
-            reader.CollectionCount.ShouldBe(5);
+            reader.ItemCount.ShouldBe(5);
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.String);
             reader.StringValue.ShouldBe("value 5");
@@ -92,7 +94,7 @@ namespace HmLib.Tests.Binary
             reader.StringValue.ShouldBe("1.505");
 
             reader.Read().ShouldBe(true);
-            reader.MessagePart.ShouldBe(HmMessagePart.EndOfFile);
+            reader.ReadState.ShouldBe(ReadState.EndOfFile);
 
             reader.Read().ShouldBe(false);
         }

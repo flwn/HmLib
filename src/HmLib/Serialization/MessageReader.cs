@@ -23,7 +23,7 @@ namespace HmLib.Serialization
             get; private set;
         }
 
-        public int CollectionCount
+        public int ItemCount
         {
             get; private set;
         }
@@ -38,7 +38,7 @@ namespace HmLib.Serialization
             get; private set;
         }
 
-        public HmMessagePart MessagePart
+        public ReadState ReadState
         {
             get; private set;
         }
@@ -67,17 +67,17 @@ namespace HmLib.Serialization
         {
             if (_instance.MoveNext())
             {
-                MessagePart = _instance.Current;
+                ReadState = _instance.Current;
                 return true;
             }
             return false;
         }
 
-        private IEnumerable<HmMessagePart> EnvelopeReader()
+        private IEnumerable<ReadState> EnvelopeReader()
         {
 
             MessageType = _input.Type;
-            yield return HmMessagePart.Message;
+            yield return ReadState.Message;
 
 
             if (MessageType == MessageType.Request)
@@ -86,29 +86,30 @@ namespace HmLib.Serialization
                 var headerCount = request.Headers.Count;
                 if (headerCount > 0)
                 {
-                    CollectionCount = headerCount;
-                    yield return HmMessagePart.Headers;
+                    ItemCount = headerCount;
+                    yield return ReadState.Headers;
 
-                    foreach (var value in ReadDictionary(request.Headers))
+                    foreach (var kvp in request.Headers)
                     {
-                        StringValue = value;
-                        yield return HmMessagePart.Headers;
+                        PropertyName = kvp.Key;
+                        StringValue = kvp.Value;
+                        yield return ReadState.Headers;
                     }
                 }
             }
 
-            yield return HmMessagePart.Body;
+            yield return ReadState.Body;
 
             foreach (var contentType in Reader())
             {
                 ValueType = contentType;
-                yield return HmMessagePart.Body;
+                yield return ReadState.Body;
             }
 
-            yield return HmMessagePart.EndOfFile;
+            yield return ReadState.EndOfFile;
         }
 
-        private IEnumerator<HmMessagePart> _instance;
+        private IEnumerator<ReadState> _instance;
 
         private IEnumerable<ContentType> Reader()
         {
@@ -121,7 +122,7 @@ namespace HmLib.Serialization
                 StringValue = request.Method;
                 yield return ContentType.String;
 
-                CollectionCount = request.Parameters.Count;
+                ItemCount = request.Parameters.Count;
                 yield return ContentType.Array;
 
                 foreach (var type in request.Parameters.SelectMany(x => ReadValue(x)))
@@ -176,14 +177,14 @@ namespace HmLib.Serialization
                 var collection = value as ICollection<object>;
                 if (kvpCollection != null)
                 {
-                    CollectionCount = kvpCollection.Count;
+                    ItemCount = kvpCollection.Count;
                     yield return ContentType.Struct;
 
                     inner = ReadDictionary(kvpCollection);
                 }
                 else if (collection != null)
                 {
-                    CollectionCount = collection.Count;
+                    ItemCount = collection.Count;
                     yield return ContentType.Array;
                     inner = collection;
                 }
