@@ -3,6 +3,7 @@ using Shouldly;
 
 namespace HmLib.Tests.Binary
 {
+    using _Infrastructure;
     using HmLib.Abstractions;
     using HmLib.Binary;
     using HmLib.Serialization;

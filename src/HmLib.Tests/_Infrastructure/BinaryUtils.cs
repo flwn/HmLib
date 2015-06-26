@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 
-namespace HmLib.Tests.Binary
+namespace HmLib.Tests._Infrastructure
 {
     internal class BinaryUtils
     {
@@ -31,12 +31,6 @@ namespace HmLib.Tests.Binary
 
             return FormatByteArray(outputBuffer);
 
-        }
-        public static string Tokenize(Stream input)
-        {
-            var reader = new HmLib.Binary.HmBinaryStreamReader(input);
-
-            return HmLib.Binary.Utils.Tokenize(reader);
         }
     }
 }

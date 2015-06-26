@@ -51,7 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Binary\BinaryUtils.cs" />
+    <Compile Include="_Infrastructure\BinaryUtils.cs" />
     <Compile Include="Binary\HmBinaryMessageReaderTests.cs" />
     <Compile Include="Binary\HmBinaryMessageWriterTests.cs" />
     <Compile Include="Serialization\MessageConverterTests.cs" />

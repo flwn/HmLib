@@ -6,7 +6,7 @@ using Shouldly;
 
 namespace HmLib.Tests.Serialization
 {
-    using Binary;
+    using _Infrastructure;
     using HmLib.Binary;
     using HmLib.Serialization;
     using HmLib.SimpleJson;
