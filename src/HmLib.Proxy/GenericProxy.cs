@@ -26,7 +26,7 @@ namespace HmLib.Proxy
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
             return (IDictionary<string, object>)await ExecuteMethod("getDeviceDescription", address);
         }
-        public async Task<IDictionary<string,object>> GetParamset(string address, string paramsetKey)
+        public async Task<IDictionary<string, object>> GetParamset(string address, string paramsetKey)
         {
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
             if (string.IsNullOrWhiteSpace(paramsetKey)) throw new ArgumentNullException("paramsetKey");
@@ -81,17 +81,17 @@ namespace HmLib.Proxy
         public async Task<ICollection<object>> ListDevices(string interfaceId)
         {
             if (string.IsNullOrWhiteSpace(interfaceId)) throw new ArgumentNullException("interfaceId");
-            return (ICollection<object>) await ExecuteMethod("listDevices", interfaceId);
+            return (ICollection<object>)await ExecuteMethod("listDevices", interfaceId);
         }
 
         public async Task<ICollection<object>> ListBidcosInterfaces()
         {
-            return (ICollection<object>) await ExecuteMethod("listBidcosInterfaces");
+            return (ICollection<object>)await ExecuteMethod("listBidcosInterfaces");
         }
 
         public async Task<ICollection<object>> GetServiceMessages()
         {
-            return (ICollection<object>) await ExecuteMethod("getServiceMessages");
+            return (ICollection<object>)await ExecuteMethod("getServiceMessages");
         }
         public async Task<ICollection<object>> ListMethods()
         {
@@ -105,12 +105,12 @@ namespace HmLib.Proxy
 
         public async Task<object> MultiCall(params Request[] requests)
         {
-            var multiCallParams = requests
+            var multiCallParams = new List<object>(
+                requests
                     .Select(x => new Dictionary<string, object> {
                         { "methodName", x.Method },
                         { "params", x.Parameters }
-                    })
-                    .ToList();
+                    }));
 
             return await ExecuteMethod("system.multicall", multiCallParams);
         }

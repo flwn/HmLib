@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace HmLib
 {
+    using Abstractions;
     using Serialization;
 
     public class RequestResponseProtocol : IProtocol
@@ -200,6 +201,20 @@ namespace HmLib
                 output.WriteHeader(input.PropertyName, input.StringValue);
             }
             output.EndHeaders();
+        }
+
+
+        public static Func<IMessageReader, Message> CreateMessageReader()
+        {
+            var converter = new RequestResponseProtocol();
+
+            return input =>
+            {
+                var outputBuilder = new MessageBuilder();
+                converter.ReadRequest(input, outputBuilder);
+                return outputBuilder.Result;
+            };
+
         }
     }
 }

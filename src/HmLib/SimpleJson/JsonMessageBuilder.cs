@@ -2,7 +2,7 @@
 
 namespace HmLib.SimpleJson
 {
-    using Serialization;
+    using Abstractions;
 
     public class JsonMessageBuilder : JsonObjectBuilder, IMessageBuilder
     {

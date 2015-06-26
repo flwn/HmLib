@@ -1,22 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
 namespace HmLib
 {
+    using Abstractions;
+    using Binary;
+
+
     public class HmRpcServer : IDisposable
     {
-        private readonly Func<Request, Response> _requestHandler;
+        private readonly IRequestHandler _requestHandler;
         private readonly TcpListener _listener;
 
         private Task _listenerTask;
 
-        public HmRpcServer(Func<Request, Response> requestHandler)
+        public HmRpcServer(IRequestHandler requestHandler)
         {
             _requestHandler = requestHandler;
 
@@ -66,52 +67,22 @@ namespace HmLib
                 var alreadyWrittenToResponse = false;
                 try
                 {
-                    var messageBuilder = new Serialization.MessageBuilder();
-                    var messageReader = new Binary.HmBinaryMessageReader(stream);
-                    protocol.ReadRequest(messageReader, messageBuilder);
+                    var context = new BinaryRequestContext(stream);
+                    var bufferedHandler = new BufferedMessageHandler();
 
-                    var request = (Request)messageBuilder.Result;
-#if DEBUG
-                    System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
-                    Console.WriteLine(request);
-#endif
-                    var response = (object)_requestHandler(request);
-
-
-                    switch (request.Method)
-                    {
-                        case "newDevices":
-                            response = string.Empty;
-                            break;
-                        case "listDevices":
-                            response = new List<object>(0);
-                            break;
-                        case "system.listMethods":
-                            response = new List<object> { "system.multicall" };
-                            break;
-                        case "system.multicall":
-                            var parameters = (ICollection<object>)request.Parameters.First();
-                            response = new List<object>(parameters.Select(x => ""));
-                            response = string.Empty;
-                            break;
-                        default:
-                            response = null;
-                            break;
-                    }
-
-                    //buffer for robustness.
-                    using (var buffer = new MemoryStream())
-                    {
-                        protocol.WriteResponse(new Binary.HmBinaryMessageWriter(buffer), response);
-                        alreadyWrittenToResponse = true;
-                        var bufferArray = buffer.ToArray();
-
-                        if (Debugger.IsAttached)
+                    try {
+                        await bufferedHandler.HandleRequest(context, (innerCtxt) =>
                         {
-                            Debug.WriteLine("Write response (Length={0} bytes): {1}", bufferArray.Length, Binary.Utils.Tokenize(bufferArray));
-                        }
+                            _requestHandler.HandleRequest(innerCtxt);
+                            return Task.FromResult(0);
+                        });
 
-                        await stream.WriteAsync(bufferArray, 0, bufferArray.Length);
+                        //alreadyWrittenToResponse = true;
+
+                    }
+                    catch(AggregateException aggrEx )
+                    {
+                        throw aggrEx.InnerException;
                     }
                 }
                 catch (ProtocolException protocolException) when (!alreadyWrittenToResponse)
@@ -162,7 +133,7 @@ namespace HmLib
             }
         }
 
-#region IDisposable Support
+        #region IDisposable Support
         private bool isDisposed = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -186,7 +157,7 @@ namespace HmLib
         {
             Dispose(true);
         }
-#endregion
+        #endregion
 
 
 

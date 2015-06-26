@@ -5,7 +5,7 @@ using System.IO;
 
 namespace HmLib.SimpleJson
 {
-    using Serialization;
+    using Abstractions;
 
     public class JsonObjectBuilder : IObjectBuilder
     {

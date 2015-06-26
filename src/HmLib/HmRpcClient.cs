@@ -1,14 +1,15 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+    using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace HmLib
 {
+    using Abstractions;
     using Binary;
     using Serialization;
-    using System.IO;
 
     public class HmRpcClient : IDisposable
     {
@@ -59,19 +60,20 @@ namespace HmLib
             var streamWriter = new HmBinaryMessageWriter(requestBuffer);
             _protocol.WriteRequest(streamWriter, request);
 
+            //var req = new BinaryRequestContext(requestBuffer);
+            //req.
+
             var responseBuilder = new MessageBuilder();
-            using (var networkStream = _tcpClient.GetStream())
-            {
-                requestBuffer.Position = 0;
-                await requestBuffer.CopyToAsync(networkStream);
+            var networkStream = _tcpClient.GetStream();
+            requestBuffer.Position = 0;
+            await requestBuffer.CopyToAsync(networkStream);
 
-                Thread.Sleep(100);
+            Thread.Sleep(100);
 
-                //todo: implement buffered reader
-                var streamReader = new HmBinaryMessageReader(networkStream);
+            //todo: implement buffered reader
+            var streamReader = new HmBinaryMessageReader(networkStream);
 
-                _protocol.ReadResponse(streamReader, responseBuilder);
-            }
+            _protocol.ReadResponse(streamReader, responseBuilder);
 
             var response = (Response)responseBuilder.Result;
 

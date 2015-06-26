@@ -1,5 +1,7 @@
 ﻿namespace HmLib.Serialization
 {
+    using Abstractions;
+
     public class MessageBuilder : ObjectBuilder, IMessageBuilder
     {
         private int HeaderCount { get; set; }

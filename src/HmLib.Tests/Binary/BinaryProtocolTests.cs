@@ -8,6 +8,7 @@ namespace HmLib.Tests.Binary
 {
     using HmLib.Binary;
     using HmLib.Serialization;
+    using HmLib.SimpleJson;
 
     public class BinaryProtocolTests
     {

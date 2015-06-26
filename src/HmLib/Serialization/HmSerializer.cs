@@ -5,6 +5,8 @@ using System.Linq;
 
 namespace HmLib.Serialization
 {
+    using Abstractions;
+
     /// <summary>
     /// Interface based on XmlSerializer.
     /// Serializes value a stream including type information.
@@ -44,7 +46,7 @@ namespace HmLib.Serialization
 
             if (!CanSerialize(o.GetType()))
             {
-                throw new ArgumentException("Cannot serialize type.", "o");
+                throw new ArgumentException(string.Format("Type '{0}' is not supported.", o.GetType()), "o");
             }
 
             SerializeInternal(builder, o, OuterLevel);

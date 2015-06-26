@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace HmLib.Serialization
 {
+    using Abstractions;
 
     public class ObjectBuilder : IObjectBuilder
     {
@@ -35,7 +36,7 @@ namespace HmLib.Serialization
         public void BeginArray(int count)
         {
 #if DEBUG
-            Debug.BeginArray();
+            Debug.BeginArray(count);
 #endif
 
             var list = new List<object>(count);

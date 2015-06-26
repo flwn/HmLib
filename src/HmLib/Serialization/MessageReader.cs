@@ -2,10 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace HmLib.Serialization
 {
+    using Abstractions;
+
     public class MessageReader : IMessageReader
     {
         private Message _input;

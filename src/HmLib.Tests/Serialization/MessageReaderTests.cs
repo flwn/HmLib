@@ -1,13 +1,13 @@
-﻿using HmLib.Serialization;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Shouldly;
 
 namespace HmLib.Tests.Serialization
 {
+    using HmLib.Abstractions;
+    using HmLib.Serialization;
+
+
     public class MessageReaderTests
     {
 

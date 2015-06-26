@@ -28,10 +28,8 @@ namespace HmLib.CommandLine
         public void Main(string[] args)
         {
 
-            var listener = new HmRpcServer(req =>
-            {
-                return null;
-            });
+            var requestHandler = new DefaultRequestHandler();
+            var listener = new HmRpcServer(requestHandler);
 
             listener.Start();
 
@@ -39,9 +37,10 @@ namespace HmLib.CommandLine
             {
                 Test().Wait();
             }
-            catch (Exception ex)
+            catch (AggregateException aggrEx)
             {
-                Debug.WriteLine(ex.Message, (object)ex.ToString());
+                var ex = aggrEx.InnerException;
+                Debug.WriteLine("Error: {0}", (object)ex.ToString());
                 Console.WriteLine(ex.ToString());
                 Console.ReadLine();
             }

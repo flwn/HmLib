@@ -6,7 +6,7 @@ using System.Text;
 
 namespace HmLib.Binary
 {
-    using Serialization;
+    using Abstractions;
 
     public class HmBinaryMessageReader : IMessageReader
     {

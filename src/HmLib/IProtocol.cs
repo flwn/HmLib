@@ -1,6 +1,6 @@
 ﻿namespace HmLib
 {
-    using Serialization;
+    using Abstractions;
 
     public interface IProtocol
     {
