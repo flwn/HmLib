@@ -101,7 +101,7 @@ namespace HmLib.Serialization
 
             yield return ReadState.Body;
 
-            foreach (var contentType in Reader())
+            foreach (var contentType in BodyReader())
             {
                 ValueType = contentType;
                 yield return ReadState.Body;
@@ -112,9 +112,8 @@ namespace HmLib.Serialization
 
         private IEnumerator<ReadState> _instance;
 
-        private IEnumerable<ContentType> Reader()
+        private IEnumerable<ContentType> BodyReader()
         {
-
             if (MessageType == MessageType.Request)
             {
                 var request = (Request)_input;
@@ -130,7 +129,17 @@ namespace HmLib.Serialization
                 {
                     yield return type;
                 }
+
+                yield break;
             }
+
+            var response = (Response)_input;
+
+            foreach (var type in ReadValue(response.Content))
+            {
+                yield return type;
+            }
+
         }
 
 
@@ -140,36 +149,26 @@ namespace HmLib.Serialization
             {
                 StringValue = string.Empty;
                 yield return ContentType.String;
-                yield break;
             }
             else if (value is string)
             {
-                StringValue = value as string ?? string.Empty;
+                StringValue = (string)value;
                 yield return ContentType.String;
-                yield break;
             }
-            else
-
-            if (value is double)
+            else if (value is double)
             {
                 DoubleValue = (double)value;
                 yield return ContentType.Float;
-                yield break;
             }
-            else
-
-            if (value is bool)
+            else if (value is bool)
             {
                 BooleanValue = (bool)value;
                 yield return ContentType.Boolean;
-                yield break;
             }
-            else
-            if (value is int)
+            else if (value is int)
             {
                 IntValue = (int)value;
                 yield return ContentType.Int;
-                yield break;
             }
             else if (value is IEnumerable)
             {

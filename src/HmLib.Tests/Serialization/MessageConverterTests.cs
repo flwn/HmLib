@@ -4,8 +4,9 @@ using System.Linq;
 using System.Text;
 using Shouldly;
 
-namespace HmLib.Tests.Binary
+namespace HmLib.Tests.Serialization
 {
+    using Binary;
     using HmLib.Binary;
     using HmLib.Serialization;
     using HmLib.SimpleJson;
@@ -17,12 +18,15 @@ namespace HmLib.Tests.Binary
         {
             var errorMessage = "TEST123";
             var output = new MemoryStream();
-            var protocol = new RequestResponseProtocol();
-            protocol.WriteErrorResponse(new HmBinaryMessageWriter(output), errorMessage);
+            var converter = new MessageConverter();
+            var errorResponse = new ErrorResponse { Code = -10, Message = errorMessage };
+            var errorReader = new MessageReader(errorResponse);
+            converter.Convert(errorReader, new HmBinaryMessageWriter(output));
 
             output.Seek(0, SeekOrigin.Begin);
             var jsonOutput = new StringWriter();
-            protocol.ReadResponse(new HmBinaryMessageReader(output), new JsonMessageBuilder(jsonOutput));
+
+            converter.Convert(new HmBinaryMessageReader(output), new JsonMessageBuilder(jsonOutput));
 
             var expected = "{\"faultCode\":-10,\"faultString\":\"" + errorMessage + "\"}";
 
@@ -32,12 +36,13 @@ namespace HmLib.Tests.Binary
         {
             var responseMessage = "TEST123";
             var output = new MemoryStream();
-            var protocol = new RequestResponseProtocol();
-            protocol.WriteResponse(new HmBinaryMessageWriter(output), responseMessage);
+            var converter = new MessageConverter();
+            var response = new Response { Content = responseMessage };
+            converter.Convert(new MessageReader(response), new HmBinaryMessageWriter(output));
 
             output.Seek(0, SeekOrigin.Begin);
             var jsonOutput = new StringWriter();
-            protocol.ReadResponse(new HmBinaryMessageReader(output), new JsonMessageBuilder(jsonOutput));
+            converter.Convert(new HmBinaryMessageReader(output), new JsonMessageBuilder(jsonOutput));
 
             var expected = "\"" + responseMessage + "\"";
 
@@ -55,8 +60,8 @@ namespace HmLib.Tests.Binary
 
 
             var output = new MemoryStream();
-            var protocol = new RequestResponseProtocol();
-            protocol.WriteRequest(new HmBinaryMessageWriter(output), testRequest);
+            var converter = new MessageConverter();
+            converter.Convert(new MessageReader(testRequest), new HmBinaryMessageWriter(output));
 
             var outputFormatted = BinaryUtils.FormatMemoryStream(output);
 
@@ -68,7 +73,7 @@ namespace HmLib.Tests.Binary
 
         public void ShouldReadRequestsCorrectly()
         {
-            var protocol = new RequestResponseProtocol();
+            var converter = new MessageConverter();
 
             var requestByteString =
                 "42696E400000002F000000010000000D417574686F72697A6174696F6E0000001642617369632064326C72615470775A57527059513D3D000000250000001273797374656D2E6C6973744D6574686F6473000000010000000300000003426C61";
@@ -77,7 +82,7 @@ namespace HmLib.Tests.Binary
             var requestReader = new HmBinaryMessageReader(requestStream);
             var messageBuilder = new MessageBuilder();
 
-            protocol.ReadRequest(requestReader, messageBuilder);
+            converter.Convert(requestReader, messageBuilder);
             var request = messageBuilder.Result.ShouldBeOfType<Request>();
             request.Headers.Count.ShouldBe(1);
             var authHeader = string.Concat("Basic ", Convert.ToBase64String(Encoding.UTF8.GetBytes("wiki:pedia")));
@@ -90,7 +95,7 @@ namespace HmLib.Tests.Binary
         public void BinaryWriterSupportsObjectBuilderInterface()
         {
 
-            var protocol = new RequestResponseProtocol();
+            var converter = new MessageConverter();
 
             var requestByteString =
                 "42696E400000002F000000010000000D417574686F72697A6174696F6E0000001642617369632064326C72615470775A57527059513D3D000000250000001273797374656D2E6C6973744D6574686F6473000000010000000300000003426C61";
@@ -100,7 +105,7 @@ namespace HmLib.Tests.Binary
             var output = new MemoryStream();
 
             var requestReader = new HmBinaryMessageReader(requestStream);
-            protocol.ReadRequest(requestReader, new HmBinaryMessageWriter(output));
+            converter.Convert(requestReader, new HmBinaryMessageWriter(output));
 
             var outputFormatted = BinaryUtils.FormatMemoryStream(output);
 
@@ -113,10 +118,10 @@ namespace HmLib.Tests.Binary
             var responseByteString = "42696E0100000000";
             var responseStream = BinaryUtils.CreateByteStream(responseByteString);
 
-            var protocol = new RequestResponseProtocol();
+            var converter = new MessageConverter();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
-            protocol.ReadResponse(new HmBinaryMessageReader(responseStream), builder);
+            converter.Convert(new HmBinaryMessageReader(responseStream), builder);
 
             var response = output.ToString();
 
@@ -128,10 +133,10 @@ namespace HmLib.Tests.Binary
             var responseByteString = "42696E010000000B0000000300000003426C61";
             var responseStream = BinaryUtils.CreateByteStream(responseByteString);
 
-            var protocol = new RequestResponseProtocol();
+            var converter = new MessageConverter();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
-            protocol.ReadResponse(new HmBinaryMessageReader(responseStream), builder);
+            converter.Convert(new HmBinaryMessageReader(responseStream), builder);
 
             var response = output.ToString();
 
@@ -145,10 +150,10 @@ namespace HmLib.Tests.Binary
             var responseStream = BinaryUtils.CreateByteStream(responseByteString);
 
 
-            var protocol = new RequestResponseProtocol();
+            var converter = new MessageConverter();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
-            protocol.ReadResponse(new HmBinaryMessageReader(responseStream), builder);
+            converter.Convert(new HmBinaryMessageReader(responseStream), builder);
 
             var response = output.ToString();
 

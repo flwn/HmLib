@@ -66,9 +66,9 @@ namespace HmLib.Tests.Serialization
             var reader = new MessageReader(request);
 
 
-            var protocol = new RequestResponseProtocol();
+            var converter = new MessageConverter();
             var messageBuilder = new MessageBuilder();
-            protocol.ReadRequest(reader, messageBuilder);
+            converter.Convert(reader, messageBuilder);
 
             var request2 = messageBuilder.Result.ShouldBeOfType<Request>();
             request2.Method.ShouldBe("test");

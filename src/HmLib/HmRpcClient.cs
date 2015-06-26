@@ -20,8 +20,6 @@ namespace HmLib
 
         private readonly TcpClient _tcpClient = new TcpClient();
 
-        private readonly IProtocol _protocol = new RequestResponseProtocol();
-
         public HmRpcClient(string host, int port)
         {
             _host = host;
@@ -55,15 +53,14 @@ namespace HmLib
                 throw new InvalidOperationException("Connect first.");
             }
 
+            var converter = new MessageConverter();
 
             var requestBuffer = new MemoryStream();
             var streamWriter = new HmBinaryMessageWriter(requestBuffer);
-            _protocol.WriteRequest(streamWriter, request);
+            var requestReader = new MessageReader(request);
+            converter.Convert(requestReader, streamWriter);
 
-            //var req = new BinaryRequestContext(requestBuffer);
-            //req.
 
-            var responseBuilder = new MessageBuilder();
             var networkStream = _tcpClient.GetStream();
             requestBuffer.Position = 0;
             await requestBuffer.CopyToAsync(networkStream);
@@ -72,8 +69,9 @@ namespace HmLib
 
             //todo: implement buffered reader
             var streamReader = new HmBinaryMessageReader(networkStream);
+            var responseBuilder = new MessageBuilder();
 
-            _protocol.ReadResponse(streamReader, responseBuilder);
+            converter.Convert(streamReader, responseBuilder);
 
             var response = (Response)responseBuilder.Result;
 

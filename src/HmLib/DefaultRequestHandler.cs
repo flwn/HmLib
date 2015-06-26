@@ -10,9 +10,11 @@ namespace HmLib
     {
         public void HandleRequest(IRequestContext requestContext)
         {
-            var prot = new RequestResponseProtocol();
+            //var prot = new RequestResponseProtocol();
+
+            var converter = new MessageConverter();
             var messageBuilder = new MessageBuilder();
-            prot.ReadRequest(requestContext.Request, messageBuilder);
+            converter.Convert(requestContext.Request, messageBuilder);
 
             var request = (Request)messageBuilder.Result;
             var response = HandleRequest(request);
@@ -22,8 +24,8 @@ namespace HmLib
             System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
             Console.WriteLine(request);
 #endif
-
-            prot.WriteResponse(requestContext.Response, response.Content);
+            var responseReader = new MessageReader(response);
+            converter.Convert(responseReader, requestContext.Response);
         }
 
         protected virtual Response HandleRequest(Request request)

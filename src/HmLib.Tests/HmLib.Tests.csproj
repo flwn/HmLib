@@ -54,7 +54,7 @@
     <Compile Include="Binary\BinaryUtils.cs" />
     <Compile Include="Binary\HmBinaryMessageReaderTests.cs" />
     <Compile Include="Binary\HmBinaryMessageWriterTests.cs" />
-    <Compile Include="Binary\BinaryProtocolTests.cs" />
+    <Compile Include="Serialization\MessageConverterTests.cs" />
     <Compile Include="Binary\HmBitConverterTests.cs" />
     <Compile Include="Serialization\MessageReaderTests.cs" />
     <Compile Include="Serialization\ObjectBuilderTests.cs" />

@@ -5,6 +5,7 @@ namespace HmLib.Tests.Binary
 {
     using HmLib.Abstractions;
     using HmLib.Binary;
+    using HmLib.Serialization;
     using HmLib.SimpleJson;
 
     public class HmBinaryMessageReaderTests
@@ -171,9 +172,9 @@ namespace HmLib.Tests.Binary
             var result = BinaryUtils.FormatMemoryStream(input);
 
             input.Seek(0, SeekOrigin.Begin);
-            var protocol = new RequestResponseProtocol();
+            var converter = new MessageConverter();
             var outputReader = new JsonMessageBuilder();
-            protocol.ReadRequest(new HmBinaryMessageReader(input), outputReader);
+            converter.Convert(new HmBinaryMessageReader(input), outputReader);
 
             result.ShouldBe("42696E00000001180000000A6E6577446576696365730000000100000100000000020000010100000002000000084348494C4452454E0000010000000003000000030000000776616C75652033000000030000000776616C75652032000000030000000776616C75652031000000084649524D574152450000000300000005312E353035000001010000000300000007414444524553530000000300000009426964436F532D5246000000084348494C4452454E0000010000000005000000030000000776616C75652035000000030000000776616C75652034000000030000000776616C75652033000000030000000776616C75652032000000030000000776616C75652031000000084649524D574152450000000300000005312E353035");
         }

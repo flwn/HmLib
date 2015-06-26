@@ -62,15 +62,14 @@ namespace HmLib
 
             using (var stream = tcpClient.GetStream())
             {
-                var protocol = new RequestResponseProtocol();
-
                 var alreadyWrittenToResponse = false;
                 try
                 {
                     var context = new BinaryRequestContext(stream);
                     var bufferedHandler = new BufferedMessageHandler();
 
-                    try {
+                    try
+                    {
                         await bufferedHandler.HandleRequest(context, (innerCtxt) =>
                         {
                             _requestHandler.HandleRequest(innerCtxt);
@@ -80,7 +79,7 @@ namespace HmLib
                         //alreadyWrittenToResponse = true;
 
                     }
-                    catch(AggregateException aggrEx )
+                    catch (AggregateException aggrEx)
                     {
                         throw aggrEx.InnerException;
                     }
@@ -90,8 +89,12 @@ namespace HmLib
                     Console.ForegroundColor = ConsoleColor.DarkMagenta;
                     Console.WriteLine("Protocol Error: {0}", protocolException);
                     Console.ResetColor();
+
                     //do not write error if already written to stream...
-                    protocol.WriteErrorResponse(new Binary.HmBinaryMessageWriter(stream), protocolException.Message);
+                    var errorWriter = new Binary.HmBinaryMessageWriter(stream);
+                    var converter = new Serialization.MessageConverter();
+                    var errorReader = new Serialization.MessageReader(new ErrorResponse { Code = -10, Message = protocolException.Message });
+                    converter.Convert(errorReader, errorWriter);
                 }
                 catch (Exception ex)
                 {
