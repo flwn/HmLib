@@ -31,6 +31,20 @@ namespace HmLib.CommandLine
             var requestHandler = new DefaultRequestHandler();
             var listener = new HmRpcServer(requestHandler);
 
+            listener.OnClientConnected += clientInfo =>
+            {
+                Console.Write("Incoming! (Local={0}, Remote=", clientInfo.LocalEndPoint);
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.Write(clientInfo.RemoteEndPoint);
+                Console.ResetColor();
+                Console.WriteLine(")");
+            };
+
+            listener.OnClientDisconnected += clientInfo =>
+            {
+                Debug.WriteLine("Client {0} disconnected.", clientInfo.RemoteEndPoint);
+            };
+
             listener.Start();
 
             try
@@ -67,7 +81,7 @@ namespace HmLib.CommandLine
                 var req4 = new Request { Method = "setValue", Parameters = { "IEQ0020290:1", "LEVEL", 0d, "FLOAT" } };
                 var req5 = new Request { Method = "setValue", Parameters = { "IEQ0020353:1", "LEVEL", 0d, "FLOAT" } };
 
-                var response = await proxy.MultiCall(req1, req2/*, req3, req4, req5*/);
+                //var response = await proxy.MultiCall(req1, req2/*, req3, req4, req5*/);
 
                 var req1_ = new Request { Method = "setValue", Parameters = { "HEQ0359881:1", "LEVEL", 0d, "FLOAT" } };
                 var req2_ = new Request { Method = "setValue", Parameters = { "HEQ0359959:1", "LEVEL", 0d, "FLOAT" } };
@@ -130,6 +144,7 @@ namespace HmLib.CommandLine
 
         public static async Task GatherInfo(GenericProxy proxy)
         {
+            await Task.Yield();
             //File.WriteAllText("serviceMessages.json", await proxy.GetServiceMessages());
 
 

@@ -10,13 +10,6 @@ namespace HmLib.Binary
 
     public class HmBinaryMessageReader : IMessageReader
     {
-        private static readonly byte[] PacketHeader = Encoding.ASCII.GetBytes("Bin");
-
-        private const byte ErrorMessage = 0xff;
-        private const byte RequestMessage = 0x00;
-        private const byte ResponseMessage = 0x01;
-        private const byte MessageContainsHeaders = 0x40;
-
         private readonly HmBinaryStreamReader _stream;
 
         public HmBinaryMessageReader(Stream input)
@@ -227,7 +220,7 @@ namespace HmLib.Binary
         private bool ReadPacketType()
         {
             var header = _stream.ReadBytes(3);
-            if (!PacketHeader.SequenceEqual(header))
+            if (!Packet.PacketHeader.SequenceEqual(header))
             {
                 return false;
             }
@@ -235,20 +228,20 @@ namespace HmLib.Binary
             var packetType = _stream.ReadByte();
             switch (packetType)
             {
-                case ErrorMessage:
+                case Packet.ErrorMessage:
                     MessageType = MessageType.Error;
                     return true;
-                case ResponseMessage:
+                case Packet.ResponseMessage:
                     MessageType = MessageType.Response;
                     return true;
-                case RequestMessage:
+                case Packet.RequestMessage:
                     MessageType = MessageType.Request;
                     return true;
-                case RequestMessage | MessageContainsHeaders:
+                case Packet.RequestMessageWithHeaders:
                     MessageType = MessageType.Request;
                     _containsHeaders = true;
                     return true;
-                case ResponseMessage | MessageContainsHeaders:
+                case Packet.ResponseMessageWithHeaders:
                     MessageType = MessageType.Response;
                     _containsHeaders = true;
                     return true;

@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-    using System.IO;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -65,7 +65,7 @@ namespace HmLib
             requestBuffer.Position = 0;
             await requestBuffer.CopyToAsync(networkStream);
 
-            Thread.Sleep(100);
+            await Task.Delay(100);
 
             //todo: implement buffered reader
             var streamReader = new HmBinaryMessageReader(networkStream);

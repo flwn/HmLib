@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HmLib
@@ -9,17 +9,20 @@ namespace HmLib
     using Abstractions;
     using Binary;
 
-
     public class HmRpcServer : IDisposable
     {
         private readonly IRequestHandler _requestHandler;
         private readonly TcpListener _listener;
 
         private Task _listenerTask;
+        private CancellationTokenSource _cancellation = new CancellationTokenSource();
+
+        public event Action<ClientConnectionInfo> OnClientConnected = _ => { };
+        public event Action<ClientConnectionInfo> OnClientDisconnected = _ => { };
 
         public HmRpcServer(IRequestHandler requestHandler)
         {
-            _requestHandler = requestHandler;
+            _requestHandler = new LoggingMessageHandler(new BufferedMessageHandler(requestHandler));
 
             _listener = new TcpListener(IPAddress.Any, 6300);
             _listener.Server.ReceiveTimeout = 3000 * 10;
@@ -36,8 +39,9 @@ namespace HmLib
             _listener.Start();
             _listenerTask = Task.Run(async () =>
             {
-                while (true)
+                while (!_cancellation.Token.IsCancellationRequested)
                 {
+
                     var connection = await _listener.AcceptTcpClientAsync();
 
                     var task = StartHandleConnectionAsync(connection);
@@ -50,58 +54,27 @@ namespace HmLib
         // Handle new connection
         private async Task HandleConnectionAsync(TcpClient tcpClient)
         {
-            var local = (IPEndPoint)tcpClient.Client.LocalEndPoint;
-            var remote = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-            Console.Write("Incoming! (Local={0}, Remote=", local);
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.Write(remote);
-            Console.ResetColor();
-            Console.WriteLine(")");
             await Task.Yield();
             // continue asynchronously on another threads
 
+            var local = (IPEndPoint)tcpClient.Client.LocalEndPoint;
+            var remote = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+
+            OnClientConnected(new ClientConnectionInfo
+            {
+                LocalEndPoint = local,
+                RemoteEndPoint = remote,
+                Timestamp = DateTime.Now
+            });
+
             using (var stream = tcpClient.GetStream())
             {
-                var alreadyWrittenToResponse = false;
                 try
                 {
                     var context = new BinaryRequestContext(stream);
-                    var bufferedHandler = new BufferedMessageHandler();
 
-                    try
-                    {
-                        await bufferedHandler.HandleRequest(context, (innerCtxt) =>
-                        {
-                            _requestHandler.HandleRequest(innerCtxt);
-                            return Task.FromResult(0);
-                        });
+                    await _requestHandler.HandleRequest(context);
 
-                        //alreadyWrittenToResponse = true;
-
-                    }
-                    catch (AggregateException aggrEx)
-                    {
-                        throw aggrEx.InnerException;
-                    }
-                }
-                catch (ProtocolException protocolException) when (!alreadyWrittenToResponse)
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                    Console.WriteLine("Protocol Error: {0}", protocolException);
-                    Console.ResetColor();
-
-                    //do not write error if already written to stream...
-                    var errorWriter = new Binary.HmBinaryMessageWriter(stream);
-                    var converter = new Serialization.MessageConverter();
-                    var errorReader = new Serialization.MessageReader(new ErrorResponse { Code = -10, Message = protocolException.Message });
-                    converter.Convert(errorReader, errorWriter);
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine("Error handling request. {0}", ex);
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine("Error: {0}", ex);
-                    Console.ResetColor();
                 }
                 finally
                 {
@@ -109,6 +82,13 @@ namespace HmLib
                     stream.Close();
                 }
             }
+
+            OnClientDisconnected(new ClientConnectionInfo
+            {
+                LocalEndPoint = local,
+                RemoteEndPoint = remote,
+                Timestamp = DateTime.Now
+            });
         }
         private async Task StartHandleConnectionAsync(TcpClient tcpConnection)
         {
@@ -122,13 +102,6 @@ namespace HmLib
                 await connectionTask;
                 // we may be on another thread after "await"
             }
-            catch (AggregateException aggEx)
-            {
-                var ex = aggEx.InnerException;
-                Debug.Fail(ex.Message, ex.ToString());
-
-                Console.WriteLine("Error handling connection: " + ex.ToString());
-            }
             catch (Exception ex)
             {
                 // log the error
@@ -136,7 +109,6 @@ namespace HmLib
             }
         }
 
-        #region IDisposable Support
         private bool isDisposed = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -146,8 +118,7 @@ namespace HmLib
                 if (disposing)
                 {
                     _listener.Stop();
-
-
+                    _cancellation.Cancel();
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
@@ -160,9 +131,6 @@ namespace HmLib
         {
             Dispose(true);
         }
-        #endregion
-
-
 
     }
 }

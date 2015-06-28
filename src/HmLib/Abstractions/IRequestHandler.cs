@@ -1,7 +1,9 @@
-﻿namespace HmLib.Abstractions
+﻿using System.Threading.Tasks;
+
+namespace HmLib.Abstractions
 {
     public interface IRequestHandler
     {
-        void HandleRequest(IRequestContext requestContext);
+        Task HandleRequest(IRequestContext requestContext);
     }
 }

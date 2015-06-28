@@ -1,17 +1,16 @@
 ﻿using System.Collections.Generic;
+using System;
+using System.Threading.Tasks;
 
 namespace HmLib
 {
     using Abstractions;
     using Serialization;
-    using System;
 
     public class DefaultRequestHandler : IRequestHandler
     {
-        public void HandleRequest(IRequestContext requestContext)
+        public Task HandleRequest(IRequestContext requestContext)
         {
-            //var prot = new RequestResponseProtocol();
-
             var converter = new MessageConverter();
             var messageBuilder = new MessageBuilder();
             converter.Convert(requestContext.Request, messageBuilder);
@@ -19,13 +18,15 @@ namespace HmLib
             var request = (Request)messageBuilder.Result;
             var response = HandleRequest(request);
 
-
 #if DEBUG
             System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
             Console.WriteLine(request);
 #endif
+
             var responseReader = new MessageReader(response);
             converter.Convert(responseReader, requestContext.Response);
+
+            return Task.FromResult(0);
         }
 
         protected virtual Response HandleRequest(Request request)
