@@ -1,8 +1,8 @@
 ﻿{
-  "version": "1.0.0-*",
+  "version": "1.0.0-alpha",
   "description": "Library for easy access to HomeMatic binary endpoints.",
   "authors": [ "Erik Aalbers" ],
-  "tags": [ "" ],
+  "tags": [ "HomeMatic" ],
   "projectUrl": "",
   "licenseUrl": "",
 
@@ -10,7 +10,7 @@
   },
 
   "frameworks": {
-    "dnx451": { }//,
+    "dnx451": { } //,
     //"dnxcore50": {
     //  "dependencies": {
     //    "System.Collections": "4.0.10-beta-22816",
