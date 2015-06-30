@@ -7,11 +7,11 @@
     "licenseUrl": "",
 
     "dependencies": {
-        "HmLib": "1.0.0"
+        "HmLib": "1.0.0-*"
     },
 
     "frameworks": {
-        "dnx451": { },
+        "dnx451": { }
         //"dnxcore50": {
         //    "dependencies": {
         //        "System.Collections": "4.0.10-beta-22816",

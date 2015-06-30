@@ -1,5 +1,5 @@
 # HmLib HomeMatic library for .NET
-An easy to use API for communicating with the HomeMatic CCU.
+An easy to use .NET API for communicating with the HomeMatic CCU.
 
 
 ### Getting started
