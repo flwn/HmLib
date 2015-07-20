@@ -19,6 +19,8 @@ I would like to thank the Homegear community for their [clear documentation](htt
 Also I took a some inspiration from the [HomegearLib.NET project](https://github.com/Homegear/HomegearLib.NET) for converting doubles to/from bin rpc formatted bytes.
 
 ## Status
+[![Build status](https://ci.appveyor.com/api/projects/status/gqannv7xga01jau4?svg=true)](https://ci.appveyor.com/project/flwn/hmlib)
+
 Version 1 alpha: not done, expect API changes.
 
 
