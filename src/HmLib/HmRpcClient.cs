@@ -2,7 +2,6 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace HmLib
@@ -80,7 +79,11 @@ namespace HmLib
 
         public void Dispose()
         {
+#if DNX451
             _tcpClient.Close();
+#else
+            _tcpClient.Dispose();
+#endif
         }
 
     }

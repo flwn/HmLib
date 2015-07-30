@@ -10,6 +10,26 @@
   },
 
   "frameworks": {
+    "dnxcore50": {
+      "dependencies": {
+        "System.Console": "4.0.0-beta-*",
+        "System.Collections": "4.0.0",
+        "System.Collections.Concurrent": "4.0.0",
+        "System.ComponentModel": "4.0.0",
+        "System.Diagnostics.Debug": "4.0.10",
+        "System.Linq": "4.0.0",
+        "System.Reflection": "4.0.10",
+        "System.Runtime": "4.0.20-beta-*",
+        "System.Runtime.InteropServices": "4.0.10",
+        "System.Threading": "4.0.10",
+        "System.Threading.Tasks": "4.0.10",
+        "System.IO": "4.0.10",
+        "System.Text.Encoding": "4.0.10.0",
+        "System.Net.Sockets": "4.0.10-beta-*",
+        "System.Reflection.TypeExtensions": "4.0.0-beta-*",
+        "System.Net.Primitives": "4.0.10"
+      }
+    },
     "dnx451": { }
   }
 }

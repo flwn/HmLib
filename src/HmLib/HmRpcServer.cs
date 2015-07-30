@@ -79,7 +79,6 @@ namespace HmLib
                 finally
                 {
                     await stream.FlushAsync();
-                    stream.Close();
                 }
             }
 
