@@ -9,12 +9,12 @@ namespace HmLib.Proxy
     // To enable this option, right-click on the project and select the Properties menu item. In the Build tab select "Produce outputs on build".
     public class GenericProxy
     {
-        public GenericProxy(HmRpcClient rpcClient)
+        public GenericProxy(HmClient rpcClient)
         {
             RpcClient = rpcClient;
         }
 
-        public HmRpcClient RpcClient { get; set; }
+        public HmClient RpcClient { get; set; }
 
         public async Task<IDictionary<string, object>> GetAllMetadata(string objectId)
         {
@@ -31,6 +31,13 @@ namespace HmLib.Proxy
             if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
             if (string.IsNullOrWhiteSpace(paramsetKey)) throw new ArgumentNullException("paramsetKey");
             return (IDictionary<string, object>)await ExecuteMethod("getParamset", address, paramsetKey);
+        }
+
+        public async Task<object> GetValue(string address, string key)
+        {
+            var result = await ExecuteMethod("getValue", address, key);
+
+            return result;
         }
 
         public async Task SetValue(string address, string key, bool value)
@@ -122,11 +129,11 @@ namespace HmLib.Proxy
             {
                 request.Parameters.Add(param);
             }
-            var response = await RpcClient.ExecuteRequest(request);
+
+            var response = await RpcClient.ExecuteRequest<Request, Response>(request);
 
             return response.Content;
         }
-
 
     }
 }

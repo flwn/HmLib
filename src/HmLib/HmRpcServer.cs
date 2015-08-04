@@ -71,9 +71,9 @@ namespace HmLib
             {
                 try
                 {
-                    var context = new BinaryRequestContext(stream);
+                    var message = new BinaryMessage(stream);
 
-                    await _requestHandler.HandleRequest(context);
+                    await _requestHandler.HandleRequest(message);
 
                 }
                 finally

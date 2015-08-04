@@ -2,13 +2,31 @@
 {
     using Abstractions;
 
-    public class MessageBuilder : ObjectBuilder, IMessageBuilder
+    public class MessageBuilder : ObjectBuilder, IMessageBuilder, IHasResult<Request>, IHasResult<Response>
     {
+        public MessageBuilder()
+        {
+
+        }
+
+        public MessageBuilder(Response response)
+        {
+            Result = response;
+        }
+
+        public MessageBuilder(Request request)
+        {
+            Result = request;
+        }
+
         private int HeaderCount { get; set; }
 
         public void BeginMessage(MessageType messageType)
         {
-            Result = Message.Create(messageType);
+            if (Result == null)
+            {
+                Result = Message.Create(messageType);
+            }
 
 #if DEBUG
             var count = 2;
@@ -20,7 +38,8 @@
             Debug.EndItem();
 #endif
         }
-        public void EndMessage() {
+        public void EndMessage()
+        {
 #if DEBUG
             Debug.EndStruct();
 #endif
@@ -82,5 +101,14 @@
         }
 
         public Message Result { get; private set; }
+
+        Request IHasResult<Request>.Result
+        {
+            get { return (Request)Result; }
+        }
+        Response IHasResult<Response>.Result
+        {
+            get { return (Response)Result; }
+        }
     }
 }

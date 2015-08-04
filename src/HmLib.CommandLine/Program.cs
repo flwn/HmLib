@@ -65,12 +65,14 @@ namespace HmLib.CommandLine
         public static async Task Test()
         {
             var endpoint = new IPEndPoint(IPAddress.Parse("192.168.63.3"), 2001);
-            using (var client = new HmRpcClient(endpoint))
+
+            using (var rpcClient = new HmRpcClient(endpoint))
             {
+                var client = new HmClient(() => new Binary.BufferedMessageHandler( rpcClient));
                 var stopwatch = new Stopwatch();
 
                 stopwatch.Start();
-                await client.ConnectAsync();
+                await rpcClient.ConnectAsync();
                 Console.WriteLine("Connect: {0}ms.", stopwatch.Elapsed.TotalMilliseconds);
 
                 var proxy = new GenericProxy(client);
@@ -81,7 +83,7 @@ namespace HmLib.CommandLine
                 var req4 = new Request { Method = "setValue", Parameters = { "IEQ0020290:1", "LEVEL", 0d, "FLOAT" } };
                 var req5 = new Request { Method = "setValue", Parameters = { "IEQ0020353:1", "LEVEL", 0d, "FLOAT" } };
 
-                //var response = await proxy.MultiCall(req1, req2/*, req3, req4, req5*/);
+                var closeBlinds = new[] { req1, req2, req3, req4, req5 };
 
                 var req1_ = new Request { Method = "setValue", Parameters = { "HEQ0359881:1", "LEVEL", 0d, "FLOAT" } };
                 var req2_ = new Request { Method = "setValue", Parameters = { "HEQ0359959:1", "LEVEL", 0d, "FLOAT" } };
@@ -89,7 +91,9 @@ namespace HmLib.CommandLine
                 var req4_ = new Request { Method = "setValue", Parameters = { "IEQ0020290:1", "LEVEL", 1d, "FLOAT" } };
                 var req5_ = new Request { Method = "setValue", Parameters = { "IEQ0020353:1", "LEVEL", 1d, "FLOAT" } };
 
-                //var response_ = await proxy.MultiCall(req1_, req2_, req3_, req4_, req5_);
+                var openBlinds = new[] { req1_, req2_, req3_, req4_, req5_ };
+
+                //var response = await proxy.MultiCall(closeBlinds);
                 //return;
 
                 var pong = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "TEST-" + DateTime.Now.ToString("hhmm", System.Globalization.CultureInfo.GetCultureInfo("nl-NL")), 0 } });

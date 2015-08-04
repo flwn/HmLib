@@ -9,24 +9,24 @@ namespace HmLib
 
     public class DefaultRequestHandler : IRequestHandler
     {
-        public Task HandleRequest(IRequestContext requestContext)
+        private static readonly IMessageConverter DefaultConverter = new MessageConverter();
+
+        public Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
-            var converter = new MessageConverter();
+#if DEBUG
             var messageBuilder = new MessageBuilder();
-            converter.Convert(requestContext.Request, messageBuilder);
+            DefaultConverter.Convert(requestMessage, (IMessageBuilder)messageBuilder);
 
             var request = (Request)messageBuilder.Result;
-            var response = HandleRequest(request);
 
-#if DEBUG
             System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
             Console.WriteLine(request);
+#else
+            var request = DefaultConverter.Convert<Request>(requestMessage);
 #endif
+            var response = HandleRequest(request);
 
-            var responseReader = new MessageReader(response);
-            converter.Convert(responseReader, requestContext.Response);
-
-            return Task.FromResult(0);
+            return Task.FromResult<IResponseMessage>(response);
         }
 
         protected virtual Response HandleRequest(Request request)

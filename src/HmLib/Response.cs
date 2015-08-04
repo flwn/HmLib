@@ -1,6 +1,8 @@
 ﻿namespace HmLib
 {
-    public class Response : Message
+    using Abstractions;
+
+    public class Response : Message, IResponseMessage
     {
         public Response() : base(MessageType.Response)
         {

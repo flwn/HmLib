@@ -9,14 +9,29 @@ namespace HmLib.Serialization
 
     public class MessageReader : IMessageReader
     {
+
+        private IEnumerator<ReadState> _messageEnumerator;
         private Message _input;
 
-        public MessageReader(Message input)
+        public MessageReader(Response responseInput) : this()
         {
-            if (input == null) throw new ArgumentNullException("input");
-            _input = input;
+            if (responseInput == null) throw new ArgumentNullException(nameof(responseInput));
 
-            _instance = EnvelopeReader().GetEnumerator();
+            _input = responseInput;
+
+        }
+
+        public MessageReader(Request requestInput) : this()
+        {
+            if (requestInput == null) throw new ArgumentNullException(nameof(requestInput));
+
+            _input = requestInput;
+        }
+
+        protected MessageReader()
+        {
+            _messageEnumerator = EnvelopeReader().GetEnumerator();
+
         }
 
         public bool BooleanValue
@@ -66,9 +81,9 @@ namespace HmLib.Serialization
 
         public bool Read()
         {
-            if (_instance.MoveNext())
+            if (_messageEnumerator.MoveNext())
             {
-                ReadState = _instance.Current;
+                ReadState = _messageEnumerator.Current;
                 return true;
             }
             return false;
@@ -109,8 +124,6 @@ namespace HmLib.Serialization
 
             yield return ReadState.EndOfFile;
         }
-
-        private IEnumerator<ReadState> _instance;
 
         private IEnumerable<ContentType> BodyReader()
         {

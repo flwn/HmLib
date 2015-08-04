@@ -27,6 +27,11 @@ namespace HmLib.Binary
         private int _headersWritten;
 
 
+        public HmBinaryMessageWriter(BinaryMessage binaryMessage) : this(binaryMessage.MessageStream)
+        {
+
+        }
+
         public HmBinaryMessageWriter(Stream output, bool closeOnDispose = false)
         {
             _writeBuffer = _outputWriter = new HmBinaryStreamWriter(output, closeOnDispose);

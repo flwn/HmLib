@@ -10,7 +10,7 @@ namespace HmLib
     using Binary;
     using Serialization;
 
-    public class HmRpcClient : IDisposable
+    public class HmRpcClient : IDisposable, IRequestHandler
     {
         private readonly IPEndPoint _endpoint;
 
@@ -18,6 +18,8 @@ namespace HmLib
         private readonly int _port;
 
         private readonly TcpClient _tcpClient = new TcpClient();
+
+        private bool _isDisposed;
 
         public HmRpcClient(string host, int port)
         {
@@ -33,6 +35,11 @@ namespace HmLib
 
         public async Task ConnectAsync(string host = null, int? port = null)
         {
+            if (_isDisposed)
+            {
+                throw new ObjectDisposedException(nameof(HmRpcClient));
+            }
+
             _tcpClient.ReceiveTimeout = 3000 * 10;
 
             if (_endpoint != null)
@@ -45,46 +52,76 @@ namespace HmLib
             }
         }
 
-        public async Task<Response> ExecuteRequest(Request request)
+        public async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
-            if (!_tcpClient.Connected)
+            if (_isDisposed)
             {
-                throw new InvalidOperationException("Connect first.");
+                throw new ObjectDisposedException(nameof(HmRpcClient));
             }
 
-            var converter = new MessageConverter();
-
-            var requestBuffer = new MemoryStream();
-            var streamWriter = new HmBinaryMessageWriter(requestBuffer);
-            var requestReader = new MessageReader(request);
-            converter.Convert(requestReader, streamWriter);
-
+            if (false == _tcpClient.Connected)
+            {
+                await ConnectAsync();
+            }
 
             var networkStream = _tcpClient.GetStream();
-            requestBuffer.Position = 0;
-            await requestBuffer.CopyToAsync(networkStream);
 
-            await Task.Delay(100);
+            IRequestHandler handler = new InnerHandler(networkStream);
 
-            //todo: implement buffered reader
-            var streamReader = new HmBinaryMessageReader(networkStream);
-            var responseBuilder = new MessageBuilder();
+            var binaryRequest = requestMessage as BinaryMessage;
+            if (binaryRequest == null)
+            {
+                //BufferedMessageHandler returns binary message
+                handler = new BufferedMessageHandler(handler);
+            }
 
-            converter.Convert(streamReader, responseBuilder);
-
-            var response = (Response)responseBuilder.Result;
+            var response = await handler.HandleRequest(requestMessage);
 
             return response;
         }
 
-        public void Dispose()
+        protected virtual void Dispose(bool disposing)
         {
+            if (disposing)
+            {
+                _isDisposed = true;
 #if DNX451
-            _tcpClient.Close();
+                _tcpClient.Close();
 #else
-            _tcpClient.Dispose();
+                _tcpClient.Dispose();
 #endif
+            }
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+
+        private class InnerHandler : IRequestHandler
+        {
+            private Stream _innerStream;
+
+            public InnerHandler(Stream innerStream)
+            {
+                _innerStream = innerStream;
+            }
+
+            public async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
+            {
+                return await HandleRequest((BinaryMessage)requestMessage);
+            }
+
+            private async Task<BinaryMessage> HandleRequest(BinaryMessage requestMessage)
+            {
+                await requestMessage.MessageStream.CopyToAsync(_innerStream);
+
+                await Task.Delay(100);
+
+                return new BinaryMessage(_innerStream);
+
+            }
+        }
     }
 }

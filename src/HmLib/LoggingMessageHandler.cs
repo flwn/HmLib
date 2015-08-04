@@ -14,17 +14,20 @@ namespace HmLib
             _next = next;
         }
 
-        public async Task HandleRequest(IRequestContext requestContext)
+        public async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
             try
             {
-                await _next.HandleRequest(requestContext);
+                var result = await _next.HandleRequest(requestMessage);
+
+                return result;
             }
             catch (ProtocolException protocolException)
             {
                 Console.ForegroundColor = ConsoleColor.DarkMagenta;
                 Console.WriteLine("Protocol Error: {0}", protocolException);
                 Console.ResetColor();
+                throw;
             }
             catch (Exception ex)
             {
@@ -32,6 +35,7 @@ namespace HmLib
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("Error: {0}", ex);
                 Console.ResetColor();
+                throw;
             }
         }
     }

@@ -4,9 +4,10 @@ using System.Linq;
 
 namespace HmLib
 {
-    public class Request : Message
-    {
+    using Abstractions;
 
+    public class Request : Message, IRequestMessage
+    {
         public Request() : base (MessageType.Request)
         {
             Headers = new Dictionary<string, string>();
@@ -18,6 +19,7 @@ namespace HmLib
         public string Method { get; set; }
 
         public ICollection<object> Parameters { get; set; }
+
 
         public void SetHeader(string key, string value)
         {
