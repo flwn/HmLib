@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using System.Reflection;
+
 namespace HmLib.Serialization
 {
     using Abstractions;
@@ -17,6 +19,8 @@ namespace HmLib.Serialization
         {
             [typeof(Request)] = msg => new MessageBuilder((Request)msg),
             [typeof(Response)] = msg => new MessageBuilder((Response)msg),
+            [typeof(Binary.BinaryRequest)] = msg => new Binary.HmBinaryMessageWriter(new Binary.BinaryRequest()),
+            [typeof(Binary.BinaryResponse)] = msg => new Binary.HmBinaryMessageWriter(new Binary.BinaryResponse()),
         };
 
         public TResponse Convert<TResponse>(IResponseMessage source) where TResponse : IResponseMessage
@@ -25,20 +29,20 @@ namespace HmLib.Serialization
 
             return ConvertImpl<TResponse>(source);
         }
-        public void Convert(IResponseMessage source, IMessageBuilder usingBuilder)
+        public TResponse Convert<TResponse>(IResponseMessage source, IHasResult<TResponse> usingBuilder)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (usingBuilder == null) throw new ArgumentNullException(nameof(usingBuilder));
 
-            ConvertImpl<object>(source, usingBuilder);
+            return ConvertImpl(source, usingBuilder);
         }
 
-        public void Convert(IRequestMessage source, IMessageBuilder usingBuilder)
+        public TResult Convert<TResult>(IRequestMessage source, IHasResult<TResult> usingBuilder)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (usingBuilder == null) throw new ArgumentNullException(nameof(usingBuilder));
 
-            ConvertImpl<object>(source, usingBuilder);
+            return ConvertImpl(source, usingBuilder);
         }
 
         public TResult Convert<TResult>(IRequestMessage source) where TResult : IRequestMessage
@@ -48,38 +52,24 @@ namespace HmLib.Serialization
             return ConvertImpl<TResult>(source);
         }
 
-        public void Convert<TResult>(IRequestMessage source, TResult targetMessage)
-            where TResult : IRequestMessage
-        {
-            if (source == null) throw new ArgumentNullException(nameof(source));
-            if (targetMessage == null) throw new ArgumentNullException(nameof(targetMessage));
 
-            if (source is IFastCopyTo<TResult>)
-            {
-                ((IFastCopyTo<TResult>)source).CopyTo(targetMessage);
-            }
 
-            Func<object, IMessageBuilder> builderFunc;
-            if (false == _builders.TryGetValue(typeof(TResult), out builderFunc))
-            {
-                return;
-            }
-            var writer = builderFunc(targetMessage);
-
-            if (writer == null)
-            {
-                return;
-            }
-
-            ConvertImpl<TResult>(source, writer);
-        }
-
-        private TResult ConvertImpl<TResult>(object source, IMessageBuilder writer = null)
+        private TResult ConvertImpl<TResult>(object source, IHasResult<TResult> writer = null)
         {
             Func<object, IMessageReader> readerFunc;
-            if (false == _readers.TryGetValue(source.GetType(), out readerFunc))
+
+
+            if (source is IRequestMessage)
             {
-                return default(TResult);
+                readerFunc = o => ((IRequestMessage)o).GetMessageReader();
+            }
+            else if (source is IResponseMessage)
+            {
+                readerFunc = o => ((IResponseMessage)o).GetMessageReader();
+            }
+            else
+            {
+                throw new InvalidOperationException();
             }
 
             if (writer == null)
@@ -89,150 +79,14 @@ namespace HmLib.Serialization
                 {
                     return default(TResult);
                 }
-                writer = builderFunc(null);
+                writer = (IHasResult<TResult>)builderFunc(null);
             }
 
             var reader = readerFunc(source);
 
-            Convert(reader, writer);
+            Transformer.Transform(reader, writer);
 
-            if (writer is IHasResult<TResult>)
-            {
-                return ((IHasResult<TResult>)writer).Result;
-            }
-
-            return default(TResult);
-        }
-
-        public void Convert(IMessageReader input, IMessageBuilder output)
-        {
-            if (input == null) throw new ArgumentNullException(nameof(input));
-            if (output == null) throw new ArgumentNullException(nameof(output));
-
-            ConvertInternal(input, output);
-        }
-
-        private void ConvertInternal(IMessageReader input, IMessageBuilder output)
-        {
-            if (!input.Read())
-            {
-                throw new ProtocolException("Packet Header not recognized.");
-            }
-
-            output.BeginMessage(input.MessageType);
-
-            input.Read();
-            if (input.ReadState == ReadState.Headers)
-            {
-                ConvertHeaders(input, output);
-                input.Read();
-            }
-
-            output.BeginContent();
-            if (input.MessageType == MessageType.Request)
-            {
-                input.Read();
-                output.SetMethod(input.StringValue);
-
-                input.Read();
-                ConvertArrayContent(input, output);
-            }
-            else
-            {
-                while (input.Read() && input.ReadState == ReadState.Body)
-                {
-                    ConvertValue(input, output);
-                }
-            }
-            output.EndContent();
-            output.EndMessage();
-
-            input.Read();
-            if (input.ReadState != ReadState.EndOfFile)
-            {
-                throw new ProtocolException("Expected EndOfFile");
-            }
-        }
-
-        private void ConvertArrayContent(IMessageReader reader, IObjectBuilder builder)
-        {
-
-            var itemCount = reader.ItemCount;
-            builder.BeginArray(itemCount);
-
-            for (; itemCount > 0; itemCount--)
-            {
-                builder.BeginItem();
-                reader.Read();
-
-                ConvertValue(reader, builder);
-                builder.EndItem();
-            }
-
-            builder.EndArray();
-        }
-
-        private void ConvertValue(IMessageReader reader, IObjectBuilder builder)
-        {
-            switch (reader.ValueType)
-            {
-                case ContentType.Array:
-                    ConvertArrayContent(reader, builder);
-                    break;
-                case ContentType.Struct:
-                    ConvertStructContent(reader, builder);
-                    break;
-                case ContentType.Int:
-                    builder.WriteInt32Value(reader.IntValue);
-                    break;
-                case ContentType.Boolean:
-                    builder.WriteBooleanValue(reader.BooleanValue);
-                    break;
-                case ContentType.String:
-                    builder.WriteStringValue(reader.StringValue);
-                    break;
-                case ContentType.Float:
-                    builder.WriteDoubleValue(reader.DoubleValue);
-                    break;
-                case ContentType.Base64:
-                    builder.WriteBase64String(reader.StringValue);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
-        private void ConvertStructContent(IMessageReader reader, IObjectBuilder builder)
-        {
-            var elementCount = reader.ItemCount;
-            builder.BeginStruct(reader.ItemCount);
-
-            for (; elementCount > 0; elementCount--)
-            {
-                builder.BeginItem();
-                reader.Read();
-
-                builder.WritePropertyName(reader.PropertyName);
-
-                ConvertValue(reader, builder);
-                builder.EndItem();
-            }
-
-            builder.EndStruct();
-        }
-
-
-        private void ConvertHeaders(IMessageReader input, IMessageBuilder output)
-        {
-            var headerCount = input.ItemCount;
-            output.BeginHeaders(headerCount);
-
-            for (; headerCount > 0; headerCount--)
-            {
-                input.Read();
-                output.WriteHeader(input.PropertyName, input.StringValue);
-            }
-            output.EndHeaders();
+            return writer.Result;
         }
     }
 }

@@ -55,20 +55,15 @@ namespace HmLib.Tests.Serialization
 
         public void WorksWithRequestResponseProtocol()
         {
-
             var request = new Request
             {
                 Method = "test",
                 Parameters = { "param1", new List<object> { "nested param" } }
             };
 
-
             var reader = new MessageReader(request);
-
-
-            var converter = new MessageConverter();
             var messageBuilder = new MessageBuilder();
-            converter.Convert(reader, messageBuilder);
+            Transformer.Transform(reader, messageBuilder);
 
             var request2 = messageBuilder.Result.ShouldBeOfType<Request>();
             request2.Method.ShouldBe("test");

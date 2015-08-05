@@ -7,18 +7,15 @@ namespace HmLib
     using Abstractions;
     using Serialization;
 
-    public class DefaultRequestHandler : IRequestHandler
+    public class DefaultRequestHandler : RequestHandler
     {
         private static readonly IMessageConverter DefaultConverter = new MessageConverter();
 
-        public Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
+        public override Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
 #if DEBUG
             var messageBuilder = new MessageBuilder();
-            DefaultConverter.Convert(requestMessage, (IMessageBuilder)messageBuilder);
-
-            var request = (Request)messageBuilder.Result;
-
+            var request = DefaultConverter.Convert<Request>(requestMessage, messageBuilder);
             System.Diagnostics.Debug.WriteLine(messageBuilder.Debug);
             Console.WriteLine(request);
 #else

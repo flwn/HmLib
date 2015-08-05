@@ -1,24 +1,22 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace HmLib
 {
     using Abstractions;
-    using System.Diagnostics;
 
-    public class LoggingMessageHandler : IRequestHandler
+    public class LoggingMessageHandler : DelegatingRequestHandler
     {
-        private IRequestHandler _next;
-        public LoggingMessageHandler(IRequestHandler next)
+        public LoggingMessageHandler(RequestHandler next) : base(next)
         {
-            _next = next;
         }
 
-        public async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
+        public override async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
             try
             {
-                var result = await _next.HandleRequest(requestMessage);
+                var result = await base.HandleRequest(requestMessage);
 
                 return result;
             }

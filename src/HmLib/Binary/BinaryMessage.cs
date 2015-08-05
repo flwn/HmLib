@@ -5,13 +5,14 @@ namespace HmLib.Binary
 {
     using Abstractions;
 
-    public class BinaryMessage : IRequestMessage, IResponseMessage, IFastCopyTo<BinaryMessage>
+    public abstract class BinaryMessage : IFastCopyTo<BinaryMessage>
     {
-        public BinaryMessage() : this (new MemoryStream())
+        protected BinaryMessage() : this(new MemoryStream())
         {
 
         }
-        public BinaryMessage(Stream messageStream )
+
+        protected BinaryMessage(Stream messageStream)
         {
             if (messageStream == null) throw new ArgumentNullException(nameof(messageStream));
 
@@ -21,26 +22,38 @@ namespace HmLib.Binary
 
         public Stream MessageStream { get; set; }
 
-        public IMessageReader CreateResponseReader()
-        {
-            return new HmBinaryMessageReader(MessageStream);
-        }
-        public IMessageBuilder CreateResponseWriter()
-        {
-            return new HmBinaryMessageWriter(MessageStream);
-        }
-        public IMessageReader CreateRequestReader()
-        {
-            return new HmBinaryMessageReader(MessageStream);
-        }
-        public IMessageBuilder CreateRequestWriter()
-        {
-            return new HmBinaryMessageWriter(MessageStream);
-        }
-
         public void CopyTo(BinaryMessage target)
         {
             MessageStream.CopyTo(target.MessageStream);
+        }
+
+        public IMessageReader GetMessageReader()
+        {
+            return new HmBinaryMessageReader(MessageStream);
+        }
+    }
+
+    public class BinaryResponse : BinaryMessage, IResponseMessage
+    {
+        public BinaryResponse() : base()
+        {
+
+        }
+        public BinaryResponse(Stream responseBuffer) : base(responseBuffer)
+        {
+
+        }
+    }
+
+    public class BinaryRequest : BinaryMessage, IRequestMessage
+    {
+        public BinaryRequest()
+        {
+
+        }
+        public BinaryRequest(Stream requestBuffer) : base(requestBuffer)
+        {
+
         }
     }
 }

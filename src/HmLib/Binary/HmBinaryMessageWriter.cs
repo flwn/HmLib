@@ -6,7 +6,7 @@ namespace HmLib.Binary
 {
     using Abstractions;
 
-    public class HmBinaryMessageWriter : IDisposable, IMessageBuilder
+    public class HmBinaryMessageWriter : IDisposable, IMessageBuilder, IHasResult<BinaryRequest>, IHasResult<BinaryResponse>
     {
         private static readonly byte[] PacketHeader = Encoding.ASCII.GetBytes("Bin");
 
@@ -26,14 +26,21 @@ namespace HmLib.Binary
         private int _headerCount;
         private int _headersWritten;
 
+        private Stream _output;
 
+        public BinaryMessage Result { get; private set; }
+
+        BinaryRequest IHasResult<BinaryRequest>.Result => (Result ?? new BinaryRequest(_output)) as BinaryRequest;
+
+        BinaryResponse IHasResult<BinaryResponse>.Result => (Result ?? new BinaryResponse(_output)) as BinaryResponse;
         public HmBinaryMessageWriter(BinaryMessage binaryMessage) : this(binaryMessage.MessageStream)
         {
-
+            Result = binaryMessage;
         }
 
         public HmBinaryMessageWriter(Stream output, bool closeOnDispose = false)
         {
+            _output = output;
             _writeBuffer = _outputWriter = new HmBinaryStreamWriter(output, closeOnDispose);
         }
 

@@ -20,7 +20,7 @@ namespace HmLib
         public event Action<ClientConnectionInfo> OnClientConnected = _ => { };
         public event Action<ClientConnectionInfo> OnClientDisconnected = _ => { };
 
-        public HmRpcServer(IRequestHandler requestHandler)
+        public HmRpcServer(RequestHandler requestHandler)
         {
             _requestHandler = new LoggingMessageHandler(new BufferedMessageHandler(requestHandler));
 
@@ -71,10 +71,13 @@ namespace HmLib
             {
                 try
                 {
-                    var message = new BinaryMessage(stream);
+                    var message = new BinaryRequest(stream);
 
-                    await _requestHandler.HandleRequest(message);
+                    var response = await _requestHandler.HandleRequest(message);
 
+                    var binaryResponse = await response.ReadAsBinary();
+
+                    await binaryResponse.MessageStream.CopyToAsync(stream);
                 }
                 finally
                 {

@@ -1,6 +1,7 @@
 ﻿namespace HmLib
 {
     using Abstractions;
+    using Serialization;
 
     public class Response : Message, IResponseMessage
     {
@@ -14,6 +15,11 @@
         public override string ToString()
         {
             return string.Concat( "Response: ", Content);
+        }
+
+        public IMessageReader GetMessageReader()
+        {
+            return new MessageReader(this);
         }
     }
 }

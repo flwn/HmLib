@@ -2,9 +2,10 @@
 
 namespace HmLib.SimpleJson
 {
+    using System;
     using Abstractions;
 
-    public class JsonMessageBuilder : JsonObjectBuilder, IMessageBuilder
+    public class JsonMessageBuilder : JsonObjectBuilder, IMessageBuilder, IHasResult<string>
     {
         public JsonMessageBuilder(TextWriter writer = null) : base(writer)
         {
@@ -17,6 +18,8 @@ namespace HmLib.SimpleJson
         }
 
         private int HeaderCount { get; set; }
+
+        public string Result => base.ToString();
 
         public void SetMethod(string method)
         {

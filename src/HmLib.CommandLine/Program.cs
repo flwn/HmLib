@@ -66,7 +66,7 @@ namespace HmLib.CommandLine
         {
             var endpoint = new IPEndPoint(IPAddress.Parse("192.168.63.3"), 2001);
 
-            using (var rpcClient = new HmRpcClient(endpoint))
+            using (var rpcClient = new TcpClientRequestHandler(endpoint))
             {
                 var client = new HmClient(() => new Binary.BufferedMessageHandler( rpcClient));
                 var stopwatch = new Stopwatch();

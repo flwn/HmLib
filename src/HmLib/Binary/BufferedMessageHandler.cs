@@ -1,51 +1,33 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 
 namespace HmLib.Binary
 {
     using Abstractions;
-    using Serialization;
 
-    public class BufferedMessageHandler : IRequestHandler
+    public class BufferedMessageHandler : DelegatingRequestHandler
     {
-        private readonly IMessageConverter _messageConverter;
-
-
-        private IRequestHandler _next;
-        public BufferedMessageHandler(IRequestHandler next, IMessageConverter messageConverter = null)
+        public BufferedMessageHandler(RequestHandler next) : base(next)
         {
-            if (next == null) throw new ArgumentNullException(nameof(next));
-
-            _next = next;
-            _messageConverter = messageConverter ?? new MessageConverter();
         }
 
-        public async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
+        public override async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
-
             try
             {
-                var requestBuffer = new MemoryStream();
-                var bufferedRequest = new BinaryMessage(requestBuffer);
-                var bufferedMessageWriter = new HmBinaryMessageWriter(bufferedRequest);
+                var bufferedRequest = await requestMessage.ReadAsBinary();
 
-                _messageConverter.Convert(requestMessage, (IMessageBuilder)bufferedMessageWriter);
+                var innerResponse = await base.HandleRequest(bufferedRequest);
 
-                //rewind memory stream for reading
-                requestBuffer.Position = 0L;
-
-                var innerResponse = await _next.HandleRequest(bufferedRequest);
-
-                var outerResponse = _messageConverter.Convert<BinaryMessage>(innerResponse);
+                var outerResponse = await innerResponse.ReadAsBinary();
 
                 return outerResponse;
             }
             catch (ProtocolException protocolException)
             {
                 var errorBuffer = new MemoryStream();
-
-                var writer = new HmBinaryMessageWriter(errorBuffer);
+                var response = new BinaryResponse();
+                var writer = new HmBinaryMessageWriter(response);
                 writer.BeginMessage(MessageType.Error);
                 writer.BeginContent();
                 writer.BeginStruct(2);
@@ -72,7 +54,7 @@ namespace HmLib.Binary
                 }
 #endif
 
-                return new BinaryMessage(errorBuffer);
+                return response;
             }
         }
 

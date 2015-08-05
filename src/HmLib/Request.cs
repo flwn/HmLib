@@ -5,6 +5,7 @@ using System.Linq;
 namespace HmLib
 {
     using Abstractions;
+    using Serialization;
 
     public class Request : Message, IRequestMessage
     {
@@ -52,6 +53,11 @@ namespace HmLib
         public override string ToString()
         {
             return string.Format("Request Method={0}. Parameters (Count={1}): {2}.", Method, Parameters.Count, string.Join(", ", Parameters.Select(x => (x ?? string.Empty).ToString())));
+        }
+
+        public IMessageReader GetMessageReader()
+        {
+            return new MessageReader(this);
         }
     }
 }

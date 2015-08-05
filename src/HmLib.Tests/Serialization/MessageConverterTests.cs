@@ -20,17 +20,15 @@ namespace HmLib.Tests.Serialization
             var output = new MemoryStream();
             var converter = new MessageConverter();
             var errorResponse = new ErrorResponse { Code = -10, Message = errorMessage };
-            var errorReader = new MessageReader(errorResponse);
-            converter.Convert(errorReader, new HmBinaryMessageWriter(output));
+            var result = converter.Convert<BinaryResponse>(errorResponse, new HmBinaryMessageWriter(output));
 
             output.Seek(0, SeekOrigin.Begin);
-            var jsonOutput = new StringWriter();
-
-            converter.Convert(new HmBinaryMessageReader(output), new JsonMessageBuilder(jsonOutput));
+            var jsonBuilder = new JsonMessageBuilder();
+            converter.Convert(result, jsonBuilder);
 
             var expected = "{\"faultCode\":-10,\"faultString\":\"" + errorMessage + "\"}";
 
-            jsonOutput.ToString().ShouldBe(expected);
+            jsonBuilder.Result.ShouldBe(expected);
         }
         public void ShouldWriteStringResponseCorrectly()
         {
@@ -38,15 +36,15 @@ namespace HmLib.Tests.Serialization
             var output = new MemoryStream();
             var converter = new MessageConverter();
             var response = new Response { Content = responseMessage };
-            converter.Convert(new MessageReader(response), new HmBinaryMessageWriter(output));
+            var binaryResponse = converter.Convert<BinaryResponse>(response, new HmBinaryMessageWriter(output));
 
             output.Seek(0, SeekOrigin.Begin);
-            var jsonOutput = new StringWriter();
-            converter.Convert(new HmBinaryMessageReader(output), new JsonMessageBuilder(jsonOutput));
+            var jsonBuilder = new JsonMessageBuilder();
+            converter.Convert(binaryResponse, jsonBuilder);
 
             var expected = "\"" + responseMessage + "\"";
 
-            jsonOutput.ToString().ShouldBe(expected);
+            jsonBuilder.Result.ShouldBe(expected);
         }
 
         public void ShouldWriteRequestsCorrectly()
@@ -58,10 +56,9 @@ namespace HmLib.Tests.Serialization
             };
             testRequest.SetAuthorization("wiki", "pedia");
 
-
             var output = new MemoryStream();
             var converter = new MessageConverter();
-            converter.Convert(new MessageReader(testRequest), new HmBinaryMessageWriter(output));
+            converter.Convert<BinaryRequest>(testRequest, new HmBinaryMessageWriter(output));
 
             var outputFormatted = BinaryUtils.FormatMemoryStream(output);
 
@@ -79,10 +76,10 @@ namespace HmLib.Tests.Serialization
                 "42696E400000002F000000010000000D417574686F72697A6174696F6E0000001642617369632064326C72615470775A57527059513D3D000000250000001273797374656D2E6C6973744D6574686F6473000000010000000300000003426C61";
 
             var requestStream = BinaryUtils.CreateByteStream(requestByteString);
-            var requestReader = new HmBinaryMessageReader(requestStream);
+            var binaryRequest = new BinaryRequest(requestStream);
             var messageBuilder = new MessageBuilder();
 
-            converter.Convert(requestReader, messageBuilder);
+            converter.Convert<Request>(binaryRequest, messageBuilder);
             var request = messageBuilder.Result.ShouldBeOfType<Request>();
             request.Headers.Count.ShouldBe(1);
             var authHeader = string.Concat("Basic ", Convert.ToBase64String(Encoding.UTF8.GetBytes("wiki:pedia")));
@@ -103,9 +100,8 @@ namespace HmLib.Tests.Serialization
             var requestStream = BinaryUtils.CreateByteStream(requestByteString);
 
             var output = new MemoryStream();
-
-            var requestReader = new HmBinaryMessageReader(requestStream);
-            converter.Convert(requestReader, new HmBinaryMessageWriter(output));
+            var binaryRequest = new BinaryRequest(requestStream);
+            converter.Convert<BinaryRequest>(binaryRequest, new HmBinaryMessageWriter(output));
 
             var outputFormatted = BinaryUtils.FormatMemoryStream(output);
 
@@ -121,7 +117,8 @@ namespace HmLib.Tests.Serialization
             var converter = new MessageConverter();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
-            converter.Convert(new HmBinaryMessageReader(responseStream), builder);
+            var binaryResponse = new BinaryResponse(responseStream);
+            converter.Convert(binaryResponse, builder);
 
             var response = output.ToString();
 
@@ -136,7 +133,8 @@ namespace HmLib.Tests.Serialization
             var converter = new MessageConverter();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
-            converter.Convert(new HmBinaryMessageReader(responseStream), builder);
+            var binaryResponse = new BinaryResponse(responseStream);
+            converter.Convert(binaryResponse, builder);
 
             var response = output.ToString();
 
@@ -153,7 +151,8 @@ namespace HmLib.Tests.Serialization
             var converter = new MessageConverter();
             var output = new StringWriter();
             var builder = new JsonMessageBuilder(output);
-            converter.Convert(new HmBinaryMessageReader(responseStream), builder);
+            var binaryResponse = new BinaryResponse(responseStream);
+            converter.Convert(binaryResponse, builder);
 
             var response = output.ToString();
 
