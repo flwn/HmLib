@@ -11,7 +11,7 @@ namespace HmLib
 
     public class HmRpcServer : IDisposable
     {
-        private readonly IRequestHandler _requestHandler;
+        private readonly RequestHandler _requestHandler;
         private readonly TcpListener _listener;
 
         private Task _listenerTask;

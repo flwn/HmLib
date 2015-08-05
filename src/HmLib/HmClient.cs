@@ -8,19 +8,19 @@ namespace HmLib
 
     public class HmClient
     {
-        private Func<IRequestHandler> _requestHandlerFunc;
+        private Func<RequestHandler> _requestHandlerFunc;
 
         private static readonly IMessageConverter DefaultConverter = new MessageConverter();
-        private IRequestHandler _requestHandler;
+        private RequestHandler _requestHandler;
         private bool _disposeAfterUse;
 
-        public HmClient(IRequestHandler requestHandler)
+        public HmClient(RequestHandler requestHandler)
         {
             if (requestHandler == null) throw new ArgumentNullException(nameof(requestHandler));
             _requestHandler = requestHandler;
         }
 
-        public HmClient(Func<IRequestHandler> requestHandlerFunc)
+        public HmClient(Func<RequestHandler> requestHandlerFunc)
         {
             if (requestHandlerFunc == null) throw new ArgumentNullException(nameof(requestHandlerFunc));
             _requestHandlerFunc = requestHandlerFunc;

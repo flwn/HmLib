@@ -3,32 +3,18 @@ using System.Threading.Tasks;
 
 namespace HmLib.Abstractions
 {
-    public abstract class RequestHandler<TResponse, TRequest> : IRequestHandler
-        where TRequest : IRequestMessage
-        where TResponse : IResponseMessage
+    public abstract class RequestHandler : IDisposable
     {
-        private IMessageConverter _messageConverter;
+        protected RequestHandler() { }
 
-        protected RequestHandler(IMessageConverter messageConverter)
+        protected virtual void Dispose(bool disposing) { }
+
+        public void Dispose()
         {
-            if (messageConverter == null) throw new ArgumentNullException(nameof(messageConverter));
-
-            _messageConverter = messageConverter;
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
-        public virtual Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
-        {
-            TRequest request;
-            if (false == (requestMessage is TRequest))
-            {
-                request = _messageConverter.Convert<TRequest>(requestMessage);
-            }
-
-            var response = HandleRequest(requestMessage);
-
-            return response;
-        }
-
-        protected abstract Task<TResponse> HandleRequest(TRequest request);
+        internal protected abstract Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage);
     }
 }

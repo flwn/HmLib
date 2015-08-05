@@ -12,7 +12,7 @@ namespace HmLib
         {
         }
 
-        public override async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
+        internal protected override async Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
             try
             {

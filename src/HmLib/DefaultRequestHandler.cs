@@ -11,7 +11,7 @@ namespace HmLib
     {
         private static readonly IMessageConverter DefaultConverter = new MessageConverter();
 
-        public override Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
+        internal protected override Task<IResponseMessage> HandleRequest(IRequestMessage requestMessage)
         {
 #if DEBUG
             var messageBuilder = new MessageBuilder();
