@@ -1,10 +1,10 @@
 version: 1.0.{build}
-os: Visual Studio 2015 RC
+os: Visual Studio 2015
 environment:
   DNX_FEED: https://www.nuget.org/api/v2
 install:
 - set PATH=C:\Program Files (x86)\MSBuild\14.0\Bin;%PATH%
-- dnvm install 1.0.0-beta4
+- dnvm install 1.0.0-beta6
 before_build:
 - nuget restore
 build:
@@ -15,7 +15,7 @@ on_success:
 - ps: >-
     # run tests
 
-    .\packages\Fixie.1.0.0.15\lib\net45\Fixie.Console .\src\HmLib.Tests\bin\Debug\HmLib.Tests.dll --xUnitXml .\xunit-results.xml
+    .\packages\Fixie.1.0.0.18\lib\net45\Fixie.Console .\src\HmLib.Tests\bin\Debug\HmLib.Tests.dll --xUnitXml .\xunit-results.xml
 
 
     # upload results to AppVeyor
