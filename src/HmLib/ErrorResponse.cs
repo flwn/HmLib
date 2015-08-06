@@ -8,6 +8,8 @@ namespace HmLib
         private Tuple<int, string> _values = new Tuple<int, string>(default(int), null);
 
 
+        public override bool IsErrorResponse => true;
+
         public ErrorResponse()
         {
             Type = MessageType.Error;

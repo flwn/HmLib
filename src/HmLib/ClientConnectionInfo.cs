@@ -8,6 +8,7 @@ namespace HmLib
         public IPEndPoint LocalEndPoint { get; set; }
         public IPEndPoint RemoteEndPoint { get; set; }
 
-        public DateTime Timestamp { get; set; }
+        public DateTimeOffset Started { get; set; }
+        public DateTimeOffset Finished { get; set; }
     }
 }

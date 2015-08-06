@@ -2,7 +2,7 @@
 using System;
 using System.Threading.Tasks;
 
-namespace HmLib
+namespace HmLib.Server
 {
     using Abstractions;
     using Serialization;

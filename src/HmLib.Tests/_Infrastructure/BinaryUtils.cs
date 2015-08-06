@@ -9,14 +9,20 @@ namespace HmLib.Tests._Infrastructure
 
         public static MemoryStream CreateByteStream(string messageByteStream)
         {
+            var messageBytes = CreateByteArray(messageByteStream);
+
+            var messageStream = new MemoryStream(messageBytes);
+
+            return messageStream;
+        }
+        public static byte[] CreateByteArray(string messageByteStream)
+        {
             var messageBytes = Enumerable.Range(0, messageByteStream.Length)
                      .Where(x => x % 2 == 0)
                      .Select(x => Convert.ToByte(messageByteStream.Substring(x, 2), 16))
                      .ToArray();
 
-            var messageStream = new MemoryStream(messageBytes);
-
-            return messageStream;
+            return messageBytes;
         }
 
         public static string FormatByteArray(byte[] byteArray)

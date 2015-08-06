@@ -1,8 +1,11 @@
 ﻿
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace HmLib.Abstractions
 {
     internal interface IFastCopyTo<T>
     {
-        void CopyTo(T target);
+        Task CopyTo(T target, CancellationToken cancellation);
     }
 }

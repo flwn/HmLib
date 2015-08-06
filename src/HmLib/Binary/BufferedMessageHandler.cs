@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace HmLib.Binary
@@ -17,16 +18,28 @@ namespace HmLib.Binary
             {
                 var bufferedRequest = await requestMessage.ReadAsBinary();
 
-                var innerResponse = await base.HandleRequest(bufferedRequest);
+                var response = await base.HandleRequest(bufferedRequest);
 
-                var outerResponse = await innerResponse.ReadAsBinary();
+                var binaryResponse = response as BinaryResponse;
 
-                return outerResponse;
+                if (binaryResponse == null)
+                {
+                    binaryResponse = await response.ReadAsBinary();
+                }
+                else
+                {
+                    var buffer = await Utils.ReadMessageIntoBuffer(binaryResponse.MessageStream);
+                    var stream = new MemoryStream(buffer.Item1);
+                    var bufferedResponse = new BinaryResponse(stream);
+                    return bufferedResponse;
+                }
+
+                return binaryResponse;
             }
             catch (ProtocolException protocolException)
             {
                 var errorBuffer = new MemoryStream();
-                var response = new BinaryResponse();
+                var response = new BinaryResponse(errorBuffer);
                 var writer = new HmBinaryMessageWriter(response);
                 writer.BeginMessage(MessageType.Error);
                 writer.BeginContent();
@@ -54,7 +67,14 @@ namespace HmLib.Binary
                 }
 #endif
 
+                errorBuffer.Position = 0L;
                 return response;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+                throw;
+
             }
         }
 

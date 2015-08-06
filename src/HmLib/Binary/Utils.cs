@@ -1,10 +1,86 @@
-﻿using System.IO;
+﻿using System.Linq;
+using System.IO;
 using System.Text;
+using System;
+using System.Threading.Tasks;
 
 namespace HmLib.Binary
 {
     internal class Utils
     {
+
+        public async static Task<Tuple<byte[], int>> ReadMessageIntoBuffer(Stream stream)
+        {
+            var buffer = new byte[1024];
+
+            var position = await stream.ReadAsync(buffer, 0, 4);
+
+            if(position != 4)
+            {
+                throw new ProtocolException("Expected 4 bytes");
+            }
+
+            if (!buffer.Take(3).SequenceEqual(Packet.PacketHeader))
+            {
+                throw new ProtocolException("Invalid PacketHeader");
+            }
+
+            var containsHeaders = (buffer[3] != Packet.ErrorMessage) &&
+                (buffer[3] & Packet.MessageContainsHeaders) == Packet.MessageContainsHeaders;
+
+            var result = Tuple.Create(buffer, position);
+
+            if (containsHeaders)
+            {
+                result = await ReadContent(stream, result.Item1, result.Item2);
+                buffer = result.Item1;
+                position = result.Item2;
+
+                if (position + 4 > buffer.Length)
+                {
+                    Array.Resize(ref buffer, position + 4);
+                }
+            }
+
+            result = await ReadContent(stream, result.Item1, result.Item2);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Using tuple because ref-params are not supported async.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="buffer"></param>
+        /// <param name="offset"></param>
+        /// <returns></returns>
+        private static async Task<Tuple<byte[], int>> ReadContent(Stream stream, byte[] buffer, int offset)
+        {
+            var read = await stream.ReadAsync(buffer, offset, 4);
+            offset += 4;
+            if (read != 4)
+            {
+                throw new ProtocolException($"Expected 4 bytes, got {read} bytes.");
+            }
+
+            var contentLength = HmBitConverter.ToInt32(buffer, offset - 4);
+
+            if(contentLength + offset > buffer.Length)
+            {
+                Array.Resize(ref buffer, contentLength + offset);
+            }
+
+            read = await stream.ReadAsync(buffer, offset, contentLength);
+
+            offset += read;
+
+            if (read != contentLength)
+            {
+                throw new ProtocolException($"Expected content length of {contentLength} bytes, got {read} bytes.");
+            }
+
+            return Tuple.Create(buffer, offset);
+        }
 
         /// <summary>
         /// Tokenize a bin rpc stream for debugging purposes.
@@ -13,7 +89,7 @@ namespace HmLib.Binary
         /// <returns>The stream data in a more human-readable format.</returns>
         public static string Tokenize(byte[] buffer)
         {
-            using(var memstream = new MemoryStream(buffer))
+            using (var memstream = new MemoryStream(buffer))
             {
                 var reader = new HmBinaryStreamReader(memstream);
                 return Tokenize(reader);
@@ -50,7 +126,7 @@ namespace HmLib.Binary
             }
 
             var expected = (int)streamReader.BytesRead + contentLength;
-            if(contentLength == 0)
+            if (contentLength == 0)
             {
                 return outB.ToString();
             }

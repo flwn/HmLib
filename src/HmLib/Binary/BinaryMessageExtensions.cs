@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HmLib.Binary
@@ -9,30 +10,30 @@ namespace HmLib.Binary
     public static class BinaryMessageExtensions
     {
 
-        public static Task<BinaryResponse> ReadAsBinary(this IResponseMessage responseMessage)
+        public static async Task<BinaryResponse> ReadAsBinary(this IResponseMessage responseMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             var result = new BinaryResponse();
 
-            ReadAsBinary(() => responseMessage.GetMessageReader(), responseMessage, result);
+            await ReadAsBinary(() => responseMessage.GetMessageReader(), responseMessage, result, cancellationToken);
 
-            return Task.FromResult(result);
+            return result;
         }
 
-        public static Task<BinaryRequest> ReadAsBinary(this IRequestMessage requestMessage)
+        public static async Task<BinaryRequest> ReadAsBinary(this IRequestMessage requestMessage, CancellationToken cancellationToken = default(CancellationToken))
         {
             var result = new BinaryRequest();
 
-            ReadAsBinary(() => requestMessage.GetMessageReader(), requestMessage, result);
+            await ReadAsBinary(() => requestMessage.GetMessageReader(), requestMessage, result, cancellationToken);
 
-            return Task.FromResult(result);
+            return result;
         }
 
-        private static void ReadAsBinary(Func<IMessageReader> readerFunc, object message, BinaryMessage result)
+        private static async Task ReadAsBinary(Func<IMessageReader> readerFunc, object message, BinaryMessage result, CancellationToken cancellationToken)
         {
             var fastCopy = message as IFastCopyTo<BinaryMessage>;
             if (fastCopy != null)
             {
-                fastCopy.CopyTo(result);
+                await fastCopy.CopyTo(result, cancellationToken);
             }
             else
             {

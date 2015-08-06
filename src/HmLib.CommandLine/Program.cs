@@ -27,11 +27,9 @@ namespace HmLib.CommandLine
         };
         public void Main(string[] args)
         {
+            var server = Server.RpcServer.Create();
 
-            var requestHandler = new DefaultRequestHandler();
-            var listener = new HmRpcServer(requestHandler);
-
-            listener.OnClientConnected += clientInfo =>
+            server.Listener.OnClientConnected += clientInfo =>
             {
                 Console.Write("Incoming! (Local={0}, Remote=", clientInfo.LocalEndPoint);
                 Console.ForegroundColor = ConsoleColor.DarkCyan;
@@ -40,12 +38,12 @@ namespace HmLib.CommandLine
                 Console.WriteLine(")");
             };
 
-            listener.OnClientDisconnected += clientInfo =>
+            server.Listener.OnClientDisconnected += clientInfo =>
             {
                 Debug.WriteLine("Client {0} disconnected.", clientInfo.RemoteEndPoint);
             };
 
-            listener.Start();
+            server.Start();
 
             try
             {
@@ -58,9 +56,8 @@ namespace HmLib.CommandLine
                 Console.WriteLine(ex.ToString());
                 Console.ReadLine();
             }
-            //s.Wait();
 
-            listener.Dispose();
+            server.Dispose();
         }
         public static async Task Test()
         {
@@ -68,7 +65,7 @@ namespace HmLib.CommandLine
 
             using (var rpcClient = new TcpClientRequestHandler(endpoint))
             {
-                var client = new HmClient(() => new Binary.BufferedMessageHandler( rpcClient));
+                var client = new HmClient(rpcClient);
                 var stopwatch = new Stopwatch();
 
                 stopwatch.Start();

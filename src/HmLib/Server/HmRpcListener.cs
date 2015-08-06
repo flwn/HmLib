@@ -4,15 +4,12 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace HmLib
+namespace HmLib.Server
 {
-    using Abstractions;
-    using Binary;
-
-    public class HmRpcServer : IDisposable
+    public class HmRpcListener : IDisposable
     {
-        private readonly RequestHandler _requestHandler;
-        private readonly TcpListener _listener;
+        private readonly RequestDispatcher _requestDispatcher;
+        private readonly TcpListener _tcpListener;
 
         private Task _listenerTask;
         private CancellationTokenSource _cancellation = new CancellationTokenSource();
@@ -20,12 +17,12 @@ namespace HmLib
         public event Action<ClientConnectionInfo> OnClientConnected = _ => { };
         public event Action<ClientConnectionInfo> OnClientDisconnected = _ => { };
 
-        public HmRpcServer(RequestHandler requestHandler)
+        public HmRpcListener(RequestDispatcher requestDispatcher, int port)
         {
-            _requestHandler = new LoggingMessageHandler(new BufferedMessageHandler(requestHandler));
+            _requestDispatcher = requestDispatcher;
 
-            _listener = new TcpListener(IPAddress.Any, 6300);
-            _listener.Server.ReceiveTimeout = 3000 * 10;
+            _tcpListener = new TcpListener(IPAddress.Any, 6300);
+            _tcpListener.Server.ReceiveTimeout = 3000 * 10;
         }
 
 
@@ -36,13 +33,13 @@ namespace HmLib
                 return;
             }
 
-            _listener.Start();
+            _tcpListener.Start();
             _listenerTask = Task.Run(async () =>
             {
                 while (!_cancellation.Token.IsCancellationRequested)
                 {
 
-                    var connection = await _listener.AcceptTcpClientAsync();
+                    var connection = await _tcpListener.AcceptTcpClientAsync();
 
                     var task = StartHandleConnectionAsync(connection);
                     // if already faulted, re-throw any error on the calling context
@@ -60,37 +57,26 @@ namespace HmLib
             var local = (IPEndPoint)tcpClient.Client.LocalEndPoint;
             var remote = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
 
-            OnClientConnected(new ClientConnectionInfo
+            var connectionInfo = new ClientConnectionInfo
             {
                 LocalEndPoint = local,
                 RemoteEndPoint = remote,
-                Timestamp = DateTime.Now
-            });
+                Started = DateTimeOffset.UtcNow
+            };
+
+            OnClientConnected(connectionInfo);
 
             using (var stream = tcpClient.GetStream())
             {
-                try
+                using (var connection = new Connection(connectionInfo, stream, _requestDispatcher))
                 {
-                    var message = new BinaryRequest(stream);
-
-                    var response = await _requestHandler.HandleRequest(message);
-
-                    var binaryResponse = await response.ReadAsBinary();
-
-                    await binaryResponse.MessageStream.CopyToAsync(stream);
-                }
-                finally
-                {
-                    await stream.FlushAsync();
+                    await connection.Handle();
                 }
             }
 
-            OnClientDisconnected(new ClientConnectionInfo
-            {
-                LocalEndPoint = local,
-                RemoteEndPoint = remote,
-                Timestamp = DateTime.Now
-            });
+            connectionInfo.Finished = DateTimeOffset.UtcNow;
+
+            OnClientDisconnected(connectionInfo);
         }
         private async Task StartHandleConnectionAsync(TcpClient tcpConnection)
         {
@@ -119,7 +105,7 @@ namespace HmLib
             {
                 if (disposing)
                 {
-                    _listener.Stop();
+                    _tcpListener.Stop();
                     _cancellation.Cancel();
                 }
 

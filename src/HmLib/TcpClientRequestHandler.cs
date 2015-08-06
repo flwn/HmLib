@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 namespace HmLib
 {
     using Abstractions;
+    using Binary;
 
     public class TcpClientRequestHandler : DelegatingRequestHandler
     {
@@ -21,6 +22,12 @@ namespace HmLib
         {
             _host = host;
             _port = port;
+        }
+
+        public TcpClientRequestHandler(DnsEndPoint endpoint)
+        {
+            _host = endpoint.Host;
+            _port = endpoint.Port;
         }
 
         public TcpClientRequestHandler(IPEndPoint endpoint)
@@ -60,7 +67,9 @@ namespace HmLib
         {
             await ConnectAsync();
 
-            return await base.HandleRequest(requestMessage);
+            var response = await base.HandleRequest(requestMessage);
+
+            return response;
         }
 
         protected override void Dispose(bool disposing)

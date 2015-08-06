@@ -21,5 +21,7 @@
         {
             return new MessageReader(this);
         }
+
+        public virtual bool IsErrorResponse => false;
     }
 }

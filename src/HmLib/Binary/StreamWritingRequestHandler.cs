@@ -2,10 +2,9 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace HmLib
+namespace HmLib.Binary
 {
     using Abstractions;
-    using Binary;
 
     internal class StreamWritingRequestHandler : RequestHandler
     {
@@ -22,14 +21,17 @@ namespace HmLib
         {
             if (requestMessage == null) throw new ArgumentNullException(nameof(requestMessage));
 
-            var binaryRequest = await requestMessage.ReadAsBinary();
+            var binaryRequest = requestMessage as BinaryMessage ?? await requestMessage.ReadAsBinary();
 
             await binaryRequest.MessageStream.CopyToAsync(_innerStream);
 
             await Task.Delay(100);
 
-            return new BinaryResponse(_innerStream);
-        }
+            var responseMessage = await BinaryMessage.ReadFromStream(_innerStream);
 
+            var response = responseMessage as BinaryResponse;
+
+            return response;
+        }
     }
 }
