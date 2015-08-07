@@ -9,17 +9,24 @@ namespace HmLib
 
     public class Request : Message, IRequestMessage
     {
-        public Request() : base (MessageType.Request)
+        public Request() : base(MessageType.Request)
         {
-            Headers = new Dictionary<string, string>();
-            Parameters = new List<object>();
+            Content = new Dictionary<string, object>()
+            {
+                {"method", null },
+                {"parameters", new List<object>() }
+            };
         }
 
-        public IDictionary<string, string> Headers { get; }
+        public IDictionary<string, string> Headers { get; } = new Dictionary<string, string>();
 
-        public string Method { get; set; }
+        public string Method
+        {
+            get { return (string)((Dictionary<string, object>)Content)?["method"]; }
+            set { ((Dictionary<string, object>)Content)["method"] = value; }
+        }
 
-        public ICollection<object> Parameters { get; set; }
+        public ICollection<object> Parameters => (List<object>)((Dictionary<string, object>)Content)?["parameters"];
 
 
         public void SetHeader(string key, string value)

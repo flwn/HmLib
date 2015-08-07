@@ -127,32 +127,10 @@ namespace HmLib.Serialization
 
         private IEnumerable<ContentType> BodyReader()
         {
-            if (MessageType == MessageType.Request)
-            {
-                var request = (Request)_input;
-
-                PropertyName = null;
-                StringValue = request.Method;
-                yield return ContentType.String;
-
-                ItemCount = request.Parameters.Count;
-                yield return ContentType.Array;
-
-                foreach (var type in request.Parameters.SelectMany(x => ReadValue(x)))
-                {
-                    yield return type;
-                }
-
-                yield break;
-            }
-
-            var response = (Response)_input;
-
-            foreach (var type in ReadValue(response.Content))
+            foreach (var type in ReadValue(_input.Content))
             {
                 yield return type;
             }
-
         }
 
 

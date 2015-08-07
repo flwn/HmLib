@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace HmLib.Serialization
 {
@@ -35,21 +32,12 @@ namespace HmLib.Serialization
             }
 
             output.BeginContent();
-            if (input.MessageType == MessageType.Request)
-            {
-                input.Read();
-                output.SetMethod(input.StringValue);
 
-                input.Read();
-                ConvertArrayContent(input, output);
-            }
-            else
+            while (input.Read() && input.ReadState == ReadState.Body)
             {
-                while (input.Read() && input.ReadState == ReadState.Body)
-                {
-                    ConvertValue(input, output);
-                }
+                ConvertValue(input, output);
             }
+
             output.EndContent();
             output.EndMessage();
 

@@ -7,6 +7,7 @@
         Headers,
         Body,
         EndOfFile,
+        Error,
     }
 
     public interface IMessageReader : IObjectReader

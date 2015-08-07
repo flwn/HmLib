@@ -26,6 +26,8 @@ namespace HmLib.Binary
         private int _headerCount;
         private int _headersWritten;
 
+        private bool _mustWriteMethod;
+
         private Stream _output;
 
         public BinaryMessage Result { get; }
@@ -57,6 +59,7 @@ namespace HmLib.Binary
                     _packetType = ErrorMessage;
                     break;
                 case MessageType.Request:
+                    _mustWriteMethod = true;
                     _packetType = RequestMessage;
                     break;
                 case MessageType.Response:
@@ -161,7 +164,13 @@ namespace HmLib.Binary
 
         public void BeginArray(int count)
         {
-            WriteComplexTypeHeader(ContentType.Array, count);
+            if(_messageType != MessageType.Request || _paramDepth > 1)
+            {
+                //the type of the parameters array is not written in request mode.
+                _writeBuffer.Write(ContentType.Array);
+            }
+
+            _writeBuffer.Write(count);
         }
 
         public void BeginItem()
@@ -171,7 +180,13 @@ namespace HmLib.Binary
 
         public void BeginStruct(int count)
         {
-            WriteComplexTypeHeader(ContentType.Struct, count);
+            if (_messageType == MessageType.Request && _paramDepth == 0)
+            {
+                //"method" and "parameters" keys are not written in binary format.
+                return;
+            }
+            _writeBuffer.Write(ContentType.Struct);
+            _writeBuffer.Write(count);
         }
 
         public void EndArray()
@@ -213,11 +228,34 @@ namespace HmLib.Binary
 
         public void WritePropertyName(string name)
         {
+            if (_messageType == MessageType.Request)
+            {
+                if (_paramDepth == 1)
+                {
+                    if (_mustWriteMethod && (false == name.Equals("method")))
+                    {
+                        throw new InvalidOperationException($"Expected property name, got {name} instead.");
+                    }
+
+                    return;
+                }
+
+            }
             _writeBuffer.Write(name);
         }
 
         public void WriteStringValue(string value)
         {
+            if (_messageType == MessageType.Request)
+            {
+                if (_paramDepth == 1)
+                {
+                    //write request "method".
+                    _writeBuffer.Write(value);
+                    _mustWriteMethod = false;
+                    return;
+                }
+            }
             _writeBuffer.Write(ContentType.String);
             _writeBuffer.Write(value);
         }
@@ -246,7 +284,7 @@ namespace HmLib.Binary
 
         private void WriteComplexTypeHeader(ContentType contentType, int count)
         {
-            if (_messageType != MessageType.Request || _paramDepth > 0)
+            if (_messageType != MessageType.Request || _paramDepth > 1)
             {
                 _writeBuffer.Write(contentType);
             }

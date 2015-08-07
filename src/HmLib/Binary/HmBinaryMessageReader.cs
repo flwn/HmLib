@@ -11,6 +11,20 @@ namespace HmLib.Binary
     {
         private readonly HmBinaryStreamReader _stream;
 
+        private bool _containsHeaders;
+
+        private int _expectedHeaderLength;
+        private int _headersToRead = 0;
+        private int _headerOffset;
+
+        private int _expectedBodyEnd;
+
+        private Token _currentToken;
+
+        private Exception _error;
+
+        private IEnumerator<Token> _tokenReader;
+
         public HmBinaryMessageReader(Stream input)
         {
             _reader = InitialReader;
@@ -20,24 +34,17 @@ namespace HmLib.Binary
         public ReadState ReadState { get; private set; }
         public MessageType MessageType { get; private set; }
 
-        private bool _containsHeaders;
 
-        private int _expectedHeaderLength;
-        private int _headersRead = 0;
-        private int _headerOffset;
+        public int ItemCount => _currentToken.ItemCount;
 
-        private int _expectedBodyEnd;
+        public string PropertyName => _currentToken.PropertyName;
+        public string StringValue => _currentToken.String;
 
-        public int ItemCount { get; private set; }
+        public int IntValue => _currentToken.Int;
+        public double DoubleValue => _currentToken.Double;
+        public bool BooleanValue => _currentToken.Boolean;
 
-        public string PropertyName { get; private set; }
-        public string StringValue { get; private set; }
-
-        public int IntValue { get; private set; }
-        public double DoubleValue { get; private set; }
-        public bool BooleanValue { get; private set; }
-
-        public ContentType? ValueType { get; private set; }
+        public ContentType? ValueType => _currentToken.Type;
 
         private Func<bool> _reader;
 
@@ -52,12 +59,14 @@ namespace HmLib.Binary
                 return true;
             }
 
-            _reader = ErrorReader;
             return false;
         }
 
         private bool EndOfFileReader() => false;
-        private bool ErrorReader() => false;
+        private bool ErrorReader()
+        {
+            throw _error;
+        }
 
         private Stack<Tuple<bool, int>> _collectionDepth = new Stack<Tuple<bool, int>>();
         private bool _readKeyValuePairs;
@@ -70,7 +79,7 @@ namespace HmLib.Binary
             _itemsToReadInCurrentCollection = ItemCount;
             _readKeyValuePairs = ValueType == ContentType.Struct;
         }
-        private void EndItem()
+        private void CompleteCollectionItem()
         {
             _itemsToReadInCurrentCollection--;
             if (_itemsToReadInCurrentCollection == 0)
@@ -78,7 +87,7 @@ namespace HmLib.Binary
                 var tmp = _collectionDepth.Pop();
                 _readKeyValuePairs = tmp.Item1;
                 _itemsToReadInCurrentCollection = tmp.Item2;
-                EndItem();
+                CompleteCollectionItem();
             }
         }
 
@@ -110,21 +119,19 @@ namespace HmLib.Binary
                     return true;
 
                 case ReadState.Headers:
-                    if (_headersRead < ItemCount)
+                    if (_headersToRead > 0)
                     {
                         ReadHeader();
 
-                        if (_headersRead < ItemCount)
-                        {
-                            return true;
-                        }
+                        return true;
                     }
 
                     var actualBytesRead = _stream.BytesRead - _headerOffset;
                     if (_expectedHeaderLength != actualBytesRead)
                     {
-                        _reader = ErrorReader;
-                        throw new ProtocolException($"Expected a header of length {_expectedHeaderLength} bytes, instead read {actualBytesRead} bytes.");
+                        var error = new ProtocolException($"Expected a header of length {_expectedHeaderLength} bytes, instead read {actualBytesRead} bytes.");
+                        SetError(error);
+                        return false;
                     }
 
                     MoveToContent();
@@ -136,74 +143,99 @@ namespace HmLib.Binary
 
         private void ReadHeader()
         {
-            _headersRead++;
-            PropertyName = _stream.ReadString();
-            ValueType = ContentType.String;
-            StringValue = _stream.ReadString();
+            _headersToRead--;
+            var key = _stream.ReadString();
+            var value = _stream.ReadString();
+            _currentToken = new Token
+            {
+                PropertyName = key,
+                Type = ContentType.String,
+                String = value
+            };
         }
 
-        private IEnumerable<ContentType> ReadValueType()
+        private IEnumerable<Token> ReadTokens()
         {
             if (MessageType == MessageType.Request)
             {
-                //request method
-                yield return ContentType.String;
+                yield return new Token
+                {
+                    Type = ContentType.Struct,
+                    ItemCount = 2
+                };
 
-                //request params
-                yield return ContentType.Array;
+                //request method
+                yield return new Token
+                {
+                    PropertyName = "method",
+                    Type = ContentType.String,
+                    String = _stream.ReadString()
+                };
+
+                //request method
+                yield return new Token
+                {
+                    PropertyName = "parameters",
+                    Type = ContentType.Array,
+                    ItemCount = _stream.ReadInt32()
+                };
             }
 
             while (_expectedBodyEnd > _stream.BytesRead)
             {
+                var propertyName = _readKeyValuePairs ? _stream.ReadString() : null;
+
                 var contentType = _stream.ReadContentType();
-                yield return contentType;
+
+                var token = new Token
+                {
+                    Type = contentType,
+                    PropertyName = propertyName,
+                };
+
+                switch (contentType)
+                {
+                    case ContentType.Array:
+                    case ContentType.Struct:
+                        token.ItemCount = _stream.ReadInt32();
+                        break;
+                    case ContentType.Base64:
+                    case ContentType.String:
+                        token.String = _stream.ReadString();
+                        break;
+                    case ContentType.Boolean:
+                        token.Boolean = _stream.ReadBoolean();
+                        break;
+                    case ContentType.Float:
+                        token.Double = _stream.ReadDouble();
+                        break;
+                    case ContentType.Int:
+                        token.Int = _stream.ReadInt32();
+                        break;
+
+                }
+
+                yield return token;
             }
         }
 
         private void ReadBody()
         {
-            if (_readKeyValuePairs)
-            {
-                PropertyName = _stream.ReadString();
-            }
-
-            if (!_typeReader.MoveNext())
+            if (!_tokenReader.MoveNext())
             {
                 MoveToEof();
                 return;
             }
 
-            ValueType = _typeReader.Current;
+            _currentToken = _tokenReader.Current;
 
             if (ValueType == ContentType.Array || ValueType == ContentType.Struct)
             {
-                ItemCount = _stream.ReadInt32();
                 BeginCollection();
                 return;
             }
 
-            if (ValueType == ContentType.String || ValueType == ContentType.Base64)
-            {
-                StringValue = _stream.ReadString();
-            }
-            else if (ValueType == ContentType.Int)
-            {
-                IntValue = _stream.ReadInt32();
-            }
-            else if (ValueType == ContentType.Float)
-            {
-                DoubleValue = _stream.ReadDouble();
-            }
-            else if (ValueType == ContentType.Boolean)
-            {
-                BooleanValue = _stream.ReadBoolean();
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-
-            EndItem();
+            CompleteCollectionItem();
         }
 
 
@@ -212,6 +244,8 @@ namespace HmLib.Binary
             var header = _stream.ReadBytes(3);
             if (!Packet.PacketHeader.SequenceEqual(header))
             {
+                var error = new ProtocolException("Packet header is not recognized");
+                SetError(error);
                 return false;
             }
 
@@ -236,18 +270,26 @@ namespace HmLib.Binary
                     _containsHeaders = true;
                     return true;
                 default:
+                    var error = new ProtocolException($"Packet type {packetType:X2} is not recognized");
+                    SetError(error);
                     return false;
             }
         }
 
         private void MoveToEof()
         {
+            if (ReadState == ReadState.Error)
+            {
+                return;
+            }
+
             _reader = EndOfFileReader;
             ReadState = ReadState.EndOfFile;
 
             if (_stream.BytesRead != _expectedBodyEnd)
             {
-                throw new ProtocolException($"The response is incomplete or corrupted. Expected {_expectedBodyEnd} bytes, read {_stream.BytesRead} bytes.");
+                var error = new ProtocolException($"The response is incomplete or corrupted. Expected {_expectedBodyEnd} bytes, read {_stream.BytesRead} bytes.");
+                SetError(error);
             }
         }
 
@@ -257,10 +299,12 @@ namespace HmLib.Binary
 
             _expectedHeaderLength = _stream.ReadInt32();
             _headerOffset = (int)_stream.BytesRead;
-            ItemCount = _stream.ReadInt32();
+            _headersToRead = _stream.ReadInt32();
+            _currentToken = new Token
+            {
+                ItemCount = _headersToRead
+            };
         }
-
-        private IEnumerator<ContentType> _typeReader;
 
         private void MoveToContent()
         {
@@ -275,11 +319,34 @@ namespace HmLib.Binary
                 return;
             }
 
-            _typeReader = ReadValueType().GetEnumerator();
+            _tokenReader = ReadTokens().GetEnumerator();
 
             ReadState = ReadState.Body;
         }
 
+        private void SetError(Exception error)
+        {
+            _error = error;
+            ReadState = ReadState.Error;
+            _reader = ErrorReader;
+        }
 
+        private struct Token
+        {
+
+            public ContentType Type;
+
+            public int ItemCount;
+
+            public string PropertyName;
+
+            public string String;
+
+            public int Int;
+
+            public double Double;
+
+            public bool Boolean;
+        }
     }
 }

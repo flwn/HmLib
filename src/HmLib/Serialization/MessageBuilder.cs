@@ -85,8 +85,7 @@
 #endif
             if (Result.Type == MessageType.Request)
             {
-                var request = (Request)Result;
-                request.Parameters = CollectionResult;
+                Result.Content = StructResult;
             }
             else if (Result.Type == MessageType.Error)
             {

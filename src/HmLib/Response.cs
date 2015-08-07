@@ -10,7 +10,6 @@
 
         }
 
-        public virtual object Content { get; set; }
 
         public override string ToString() => string.Concat("Response: ", Content);
 

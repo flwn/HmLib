@@ -12,6 +12,7 @@ namespace HmLib
 
         public virtual MessageType Type { get; protected set; }
 
+        public virtual object Content { get; set; }
 
         public static Message Create(MessageType messageType)
         {

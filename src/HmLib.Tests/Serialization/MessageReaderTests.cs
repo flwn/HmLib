@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Shouldly;
 
@@ -33,11 +34,19 @@ namespace HmLib.Tests.Serialization
 
             //read body
             reader.Read().ShouldBe(true);
+            reader.ValueType.ShouldBe(ContentType.Struct);
+            reader.ItemCount.ShouldBe(2);
+
+            reader.Read().ShouldBe(true);
+            reader.PropertyName.ShouldBe("method");
             reader.ValueType.ShouldBe(ContentType.String);
             reader.StringValue.ShouldBe("test");
+
             reader.Read().ShouldBe(true);
+            reader.PropertyName.ShouldBe("parameters");
             reader.ValueType.ShouldBe(ContentType.Array);
             reader.ItemCount.ShouldBe(2);
+
             reader.Read().ShouldBe(true);
             reader.ValueType.ShouldBe(ContentType.String);
             reader.StringValue.ShouldBe("param1");
