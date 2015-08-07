@@ -102,13 +102,7 @@
 
         public Message Result { get; private set; }
 
-        Request IHasResult<Request>.Result
-        {
-            get { return (Request)Result; }
-        }
-        Response IHasResult<Response>.Result
-        {
-            get { return (Response)Result; }
-        }
+        Request IHasResult<Request>.Result => (Request)Result;
+        Response IHasResult<Response>.Result => (Response)Result;
     }
 }

@@ -67,7 +67,7 @@ namespace HmLib.SimpleJson
             var currentState = Peek();
             if (currentState != BuilderState.Struct && currentState != BuilderState.Array)
             {
-                throw new InvalidOperationException(string.Format("Invalid state, current state is {0} instead of the expected Struct Or Array.", currentState));
+                throw new InvalidOperationException($"Invalid state, current state is {currentState} instead of the expected Struct Or Array.");
             }
 
             if (_firstObjectItemWritten[_firstObjectItemWritten.Count - 1])
@@ -92,7 +92,7 @@ namespace HmLib.SimpleJson
             var state = Peek();
             if (state != BuilderState.Item)
             {
-                throw new InvalidOperationException(string.Format("Invalid State: cannot write property name while not in Item state (current state={0}).", state));
+                throw new InvalidOperationException($"Invalid State: cannot write property name while not in Item state (current state={state}).");
             }
 
             _writer.Write(Quote);
@@ -131,10 +131,7 @@ namespace HmLib.SimpleJson
             _writer.Write(value ? True : False);
         }
 
-        public override string ToString()
-        {
-            return _writer.ToString();
-        }
+        public override string ToString() => _writer.ToString();
 
         private void WriteItemSeparation()
         {
@@ -147,7 +144,7 @@ namespace HmLib.SimpleJson
             var currentState = Peek();
             if (currentState != expectedState)
             {
-                throw new InvalidOperationException(string.Format("Invalid state: current state is {0} but {1} was expected.", currentState, expectedState));
+                throw new InvalidOperationException($"Invalid state: current state is {currentState} but {expectedState} was expected.");
             }
 
             var lastState = _state.Pop();

@@ -19,7 +19,7 @@ namespace HmLib
             {
                 case MessageType.Unknown:
                 default:
-                    throw new ArgumentOutOfRangeException("messageType");
+                    throw new ArgumentOutOfRangeException(nameof(messageType));
 
                 case MessageType.Request:
                     return new Request();

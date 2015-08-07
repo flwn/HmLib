@@ -61,10 +61,7 @@ namespace HmLib.Binary
             await MessageStream.CopyToAsync(target.MessageStream, 1024, cancellation);
         }
 
-        public IMessageReader GetMessageReader()
-        {
-            return new HmBinaryMessageReader(MessageStream);
-        }
+        public IMessageReader GetMessageReader() => new HmBinaryMessageReader(MessageStream);
     }
 
     public class BinaryResponse : BinaryMessage, IResponseMessage

@@ -34,7 +34,7 @@ namespace HmLib.Serialization
 
         public bool CanSerialize(Type t)
         {
-            if (t == null) throw new ArgumentNullException("t");
+            if (t == null) throw new ArgumentNullException(nameof(t));
 
             return SupportedPrimitives.Contains(t) ||
                    SupportedCollectionTypes.Any(x => x.IsAssignableFrom(t));
@@ -47,7 +47,7 @@ namespace HmLib.Serialization
 
             if (!CanSerialize(o.GetType()))
             {
-                throw new ArgumentException(string.Format("Type '{0}' is not supported.", o.GetType()), "o");
+                throw new ArgumentException($"Type '{o.GetType()}' is not supported.", nameof(o));
             }
 
             SerializeInternal(builder, o, OuterLevel);

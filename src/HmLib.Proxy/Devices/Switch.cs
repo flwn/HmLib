@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace HmLib.Proxy.Devices
 {
     public class Switch
     {
         private readonly GenericProxy _genericProxy;
-        
+
 
         public Switch(string address, GenericProxy genericProxy)
         {
@@ -16,7 +13,7 @@ namespace HmLib.Proxy.Devices
             Address = address;
         }
 
-        public string Address { get; private set; }
+        public string Address { get; }
 
         public async Task SetState(bool switchOn)
         {

@@ -12,7 +12,7 @@ namespace HmLib.Binary
 
         private static readonly Encoding Encoding = Encoding.ASCII;
 
-        internal long Length { get { return _outStream.Length; } }
+        internal long Length => _outStream.Length;
 
 
         public HmBinaryStreamWriter(Stream output, bool closeOnDispose = false)
@@ -62,7 +62,7 @@ namespace HmLib.Binary
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             var bytesValue = Encoding.GetBytes(value);
@@ -84,7 +84,7 @@ namespace HmLib.Binary
         {
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             OutStream.Write(value, 0, value.Length);

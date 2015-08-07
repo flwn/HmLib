@@ -92,7 +92,7 @@ namespace HmLib.Binary
 
                 if (read == 0)
                 {
-                    throw new EndOfStreamException(string.Format("Read {0} bytes, expected {1} bytes.", bytesRead, count));
+                    throw new EndOfStreamException($"Read {bytesRead} bytes, expected {count} bytes.");
                 }
 
                 bytesRead += read;
@@ -104,7 +104,7 @@ namespace HmLib.Binary
             return buffer;
         }
 
-        public long BytesRead { get { return _bytesReadTotal; } }
+        public long BytesRead => _bytesReadTotal;
 
 
 

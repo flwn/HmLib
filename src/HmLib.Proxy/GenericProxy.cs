@@ -18,18 +18,18 @@ namespace HmLib.Proxy
 
         public async Task<IDictionary<string, object>> GetAllMetadata(string objectId)
         {
-            if (string.IsNullOrWhiteSpace(objectId)) throw new ArgumentNullException("objectId");
+            if (string.IsNullOrWhiteSpace(objectId)) throw new ArgumentNullException(nameof(objectId));
             return (IDictionary<string, object>)await ExecuteMethod("getAllMetadata", objectId);
         }
         public async Task<IDictionary<string, object>> GetDeviceDescription(string address)
         {
-            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
+            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException(nameof(address));
             return (IDictionary<string, object>)await ExecuteMethod("getDeviceDescription", address);
         }
         public async Task<IDictionary<string, object>> GetParamset(string address, string paramsetKey)
         {
-            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
-            if (string.IsNullOrWhiteSpace(paramsetKey)) throw new ArgumentNullException("paramsetKey");
+            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException(nameof(address));
+            if (string.IsNullOrWhiteSpace(paramsetKey)) throw new ArgumentNullException(nameof(paramsetKey));
             return (IDictionary<string, object>)await ExecuteMethod("getParamset", address, paramsetKey);
         }
 
@@ -61,25 +61,25 @@ namespace HmLib.Proxy
 
         public async Task SetValue(string address, string key, object value, string type)
         {
-            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException("address");
-            if (string.IsNullOrWhiteSpace(type)) throw new ArgumentNullException("type");
+            if (string.IsNullOrWhiteSpace(address)) throw new ArgumentNullException(nameof(address));
+            if (string.IsNullOrWhiteSpace(type)) throw new ArgumentNullException(nameof(type));
 
             type = type.ToUpper();
             if (type == "FLOAT")
             {
-                if (!(value is double)) throw new ArgumentException("value must be of type Double", "value");
+                if (!(value is double)) throw new ArgumentException("value must be of type Double", nameof(value));
             }
             else if (type == "BOOL")
             {
-                if (!(value is bool)) throw new ArgumentException("value must be of type Boolean", "value");
+                if (!(value is bool)) throw new ArgumentException("value must be of type Boolean", nameof(value));
             }
             else if (type == "STRING")
             {
-                if (!(value is string)) throw new ArgumentException("value must be of type String", "value");
+                if (!(value is string)) throw new ArgumentException("value must be of type String", nameof(value));
             }
             else if (type == "INTEGER" || type == "ENUM")
             {
-                if (!(value is int)) throw new ArgumentException("value must be of type Int32", "value");
+                if (!(value is int)) throw new ArgumentException("value must be of type Int32", nameof(value));
             }
 
             await ExecuteMethod("setValue", address, key, value, type);
@@ -87,26 +87,19 @@ namespace HmLib.Proxy
 
         public async Task<ICollection<object>> ListDevices(string interfaceId)
         {
-            if (string.IsNullOrWhiteSpace(interfaceId)) throw new ArgumentNullException("interfaceId");
+            if (string.IsNullOrWhiteSpace(interfaceId)) throw new ArgumentNullException(nameof(interfaceId));
             return (ICollection<object>)await ExecuteMethod("listDevices", interfaceId);
         }
 
-        public async Task<ICollection<object>> ListBidcosInterfaces()
-        {
-            return (ICollection<object>)await ExecuteMethod("listBidcosInterfaces");
-        }
+        public async Task<ICollection<object>> ListBidcosInterfaces() => (ICollection<object>)await ExecuteMethod("listBidcosInterfaces");
 
-        public async Task<ICollection<object>> GetServiceMessages()
-        {
-            return (ICollection<object>)await ExecuteMethod("getServiceMessages");
-        }
-        public async Task<ICollection<object>> ListMethods()
-        {
-            return (ICollection<object>)await ExecuteMethod("system.listMethods");
-        }
+        public async Task<ICollection<object>> GetServiceMessages() => (ICollection<object>)await ExecuteMethod("getServiceMessages");
+
+        public async Task<ICollection<object>> ListMethods() => (ICollection<object>)await ExecuteMethod("system.listMethods");
+
         public async Task<string> MethodHelp(string methodName)
         {
-            if (string.IsNullOrWhiteSpace(methodName)) throw new ArgumentNullException("methodName");
+            if (string.IsNullOrWhiteSpace(methodName)) throw new ArgumentNullException(nameof(methodName));
             return (string)await ExecuteMethod("system.methodHelp", methodName);
         }
 

@@ -14,7 +14,7 @@ namespace HmLib.Tests._Infrastructure
             Parameters = parameters;
         }
 
-        public object[] Parameters { get; private set; }
+        public object[] Parameters { get; }
     }
 
     public class ParameterizedTestConvention : Convention
@@ -33,10 +33,10 @@ namespace HmLib.Tests._Infrastructure
 
         class FromInputAttributes : ParameterSource
         {
-            public IEnumerable<object[]> GetParameters(MethodInfo method)
-            {
-                return method.GetCustomAttributes<InputAttribute>(true).Select(input => input.Parameters);
-            }
+            public IEnumerable<object[]> GetParameters(MethodInfo method) =>
+                 method
+                    .GetCustomAttributes<InputAttribute>(true)
+                    .Select(input => input.Parameters);
         }
     }
 }

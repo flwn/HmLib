@@ -28,7 +28,7 @@ namespace HmLib.Binary
 
         private Stream _output;
 
-        public BinaryMessage Result { get; private set; }
+        public BinaryMessage Result { get; }
 
         BinaryRequest IHasResult<BinaryRequest>.Result => (Result ?? new BinaryRequest(_output)) as BinaryRequest;
 
@@ -51,7 +51,7 @@ namespace HmLib.Binary
             switch (messageType)
             {
                 default:
-                    throw new ArgumentOutOfRangeException("messageType");
+                    throw new ArgumentOutOfRangeException(nameof(messageType));
 
                 case MessageType.Error:
                     _packetType = ErrorMessage;
@@ -71,7 +71,7 @@ namespace HmLib.Binary
         {
             if (string.IsNullOrEmpty(method))
             {
-                throw new ArgumentNullException("method");
+                throw new ArgumentNullException(nameof(method));
             }
             if (_messageType != MessageType.Request)
             {
@@ -85,7 +85,7 @@ namespace HmLib.Binary
         {
             if (headerCount < 0)
             {
-                throw new ArgumentOutOfRangeException("headerCount");
+                throw new ArgumentOutOfRangeException(nameof(headerCount));
             }
 
             if (_packetType == ErrorMessage)
@@ -109,12 +109,12 @@ namespace HmLib.Binary
         {
             if (string.IsNullOrEmpty(key))
             {
-                throw new ArgumentNullException("key", "Parameter key cannot be null or empty.");
+                throw new ArgumentNullException(nameof(key), "Parameter key cannot be null or empty.");
             }
 
             if (value == null)
             {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             if (_packetType == ErrorMessage)
@@ -136,8 +136,7 @@ namespace HmLib.Binary
 
             if (_headersWritten != _headerCount)
             {
-                throw new InvalidOperationException(
-                    string.Format("Expected {0} headers to be written, got {1} instead.", _headerCount, _headersWritten));
+                throw new InvalidOperationException($"Expected {_headerCount} headers to be written, got {_headersWritten} instead.");
             }
 
             if (_headerCount > 0)
@@ -243,10 +242,7 @@ namespace HmLib.Binary
             Dispose(true);
         }
 
-        public override string ToString()
-        {
-            return _outputWriter.ToString();
-        }
+        public override string ToString() => _outputWriter.ToString();
 
         private void WriteComplexTypeHeader(ContentType contentType, int count)
         {

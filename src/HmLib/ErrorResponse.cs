@@ -69,9 +69,6 @@ namespace HmLib
             base.Content = newValue;
         }
 
-        public override string ToString()
-        {
-            return string.Format("Error {0}: {1}", Code, Message);
-        }
+        public override string ToString() => $"Error {Code}: {Message}";
     }
 }

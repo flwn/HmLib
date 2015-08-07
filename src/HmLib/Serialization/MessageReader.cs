@@ -203,7 +203,7 @@ namespace HmLib.Serialization
                 }
                 else
                 {
-                    throw new NotSupportedException(string.Format("Collection '{0}' is not supported.", value.GetType()));
+                    throw new NotSupportedException($"Collection '{value.GetType()}' is not supported.");
                 }
 
                 foreach (var item in inner.SelectMany(x => ReadValue(x)))
@@ -213,7 +213,7 @@ namespace HmLib.Serialization
             }
             else
             {
-                throw new NotSupportedException(string.Format("Type '{0}' is not supported.", value.GetType()));
+                throw new NotSupportedException($"Type '{value.GetType()}' is not supported.");
             }
         }
 

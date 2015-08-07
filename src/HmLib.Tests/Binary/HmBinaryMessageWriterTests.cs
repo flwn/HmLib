@@ -67,8 +67,7 @@ namespace HmLib.Tests.Binary
 
             var keyBinary = BinaryUtils.FormatByteArray(Encoding.ASCII.GetBytes(key));
             var valueBinary = BinaryUtils.FormatByteArray(Encoding.ASCII.GetBytes(value));
-            var expectedContent =
-                string.Format("0000010100000001{0:X8}{1}00000003{2:X8}{3}", key.Length, keyBinary, value.Length, valueBinary);
+            var expectedContent = $"0000010100000001{key.Length:X8}{keyBinary}00000003{value.Length:X8}{valueBinary}";
 
             //expectedContent.Length / 2 because this is already in byte encoding (2 chars/byte);
             var expected = "42696E01" + (expectedContent.Length / 2).ToString("X8") + expectedContent;

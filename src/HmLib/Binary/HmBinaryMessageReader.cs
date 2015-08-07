@@ -41,10 +41,7 @@ namespace HmLib.Binary
 
         private Func<bool> _reader;
 
-        public bool Read()
-        {
-            return _reader();
-        }
+        public bool Read() => _reader();
 
         private bool InitialReader()
         {
@@ -59,14 +56,8 @@ namespace HmLib.Binary
             return false;
         }
 
-        private bool EndOfFileReader()
-        {
-            return false;
-        }
-        private bool ErrorReader()
-        {
-            return false;
-        }
+        private bool EndOfFileReader() => false;
+        private bool ErrorReader() => false;
 
         private Stack<Tuple<bool, int>> _collectionDepth = new Stack<Tuple<bool, int>>();
         private bool _readKeyValuePairs;
@@ -133,7 +124,7 @@ namespace HmLib.Binary
                     if (_expectedHeaderLength != actualBytesRead)
                     {
                         _reader = ErrorReader;
-                        throw new ProtocolException(string.Format("Expected a header of length {0} bytes, instead read {1} bytes.", _expectedHeaderLength, actualBytesRead));
+                        throw new ProtocolException($"Expected a header of length {_expectedHeaderLength} bytes, instead read {actualBytesRead} bytes.");
                     }
 
                     MoveToContent();
@@ -256,7 +247,7 @@ namespace HmLib.Binary
 
             if (_stream.BytesRead != _expectedBodyEnd)
             {
-                throw new ProtocolException(string.Format("The response is incomplete or corrupted. Expected {0} bytes, read {1} bytes.", _expectedBodyEnd, _stream.BytesRead));
+                throw new ProtocolException($"The response is incomplete or corrupted. Expected {_expectedBodyEnd} bytes, read {_stream.BytesRead} bytes.");
             }
         }
 

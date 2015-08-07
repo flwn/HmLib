@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace HmLib.Proxy.Devices
 {
@@ -16,7 +13,7 @@ namespace HmLib.Proxy.Devices
             Address = address;
         }
 
-        public string Address { get; private set; }
+        public string Address { get; }
 
         public async Task SetLevel(double level)
         {

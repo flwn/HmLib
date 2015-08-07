@@ -15,7 +15,7 @@ namespace HmLib
             Parameters = new List<object>();
         }
 
-        public IDictionary<string, string> Headers { get; private set; }
+        public IDictionary<string, string> Headers { get; }
 
         public string Method { get; set; }
 
@@ -24,8 +24,8 @@ namespace HmLib
 
         public void SetHeader(string key, string value)
         {
-            if (string.IsNullOrWhiteSpace(key)) throw new ArgumentNullException("key");
-            if (value == null) throw new ArgumentNullException("value");
+            if (string.IsNullOrWhiteSpace(key)) throw new ArgumentNullException(nameof(key));
+            if (value == null) throw new ArgumentNullException(nameof(value));
 
             if (Headers.ContainsKey(key))
             {
@@ -50,14 +50,8 @@ namespace HmLib
             SetHeader(headerKey, headerValue);
         }
 
-        public override string ToString()
-        {
-            return string.Format("Request Method={0}. Parameters (Count={1}): {2}.", Method, Parameters.Count, string.Join(", ", Parameters.Select(x => (x ?? string.Empty).ToString())));
-        }
+        public override string ToString() => $"Request Method={Method}. Parameters (Count={Parameters.Count}): {string.Join(", ", Parameters.Select(x => (x ?? string.Empty).ToString()))}.";
 
-        public IMessageReader GetMessageReader()
-        {
-            return new MessageReader(this);
-        }
+        public IMessageReader GetMessageReader() => new MessageReader(this);
     }
 }

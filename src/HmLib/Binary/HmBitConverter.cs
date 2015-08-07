@@ -63,21 +63,15 @@ namespace HmLib.Binary
             return result;
         }
 
-        public static bool ToBoolean(byte value)
-        {
-            return value == 1;
-        }
+        public static bool ToBoolean(byte value) => value == 1;
 
-        public static bool ToBoolean(byte[] value, int startIndex = 0)
-        {
-            return BitConverter.ToBoolean(value, startIndex);
-        }
+        public static bool ToBoolean(byte[] value, int startIndex = 0) => BitConverter.ToBoolean(value, startIndex);
 
         public static int ToInt32(byte[] value, int startIndex = 0)
         {
-            if (value == null) { throw new ArgumentNullException("value"); }
-            if (startIndex < 0) { throw new ArgumentOutOfRangeException("startIndex"); }
-            if (startIndex > value.Length - 4) { throw new ArgumentOutOfRangeException("startIndex"); }
+            if (value == null) { throw new ArgumentNullException(nameof(value)); }
+            if (startIndex < 0) { throw new ArgumentOutOfRangeException(nameof(startIndex)); }
+            if (startIndex > value.Length - 4) { throw new ArgumentOutOfRangeException(nameof(startIndex)); }
 
             return ToInt32Internal(value, startIndex);
         }
@@ -104,9 +98,9 @@ namespace HmLib.Binary
         public static double ToDouble(byte[] value, int startIndex = 0)
         {
             //adapted from https://github.com/Homegear/HomegearLib.NET/blob/master/HomegearLib.NET/RPC/Encoding/BinaryDecoder.cs
-            if (value == null) { throw new ArgumentNullException("value"); }
-            if (startIndex < 0) { throw new ArgumentOutOfRangeException("startIndex"); }
-            if (startIndex > value.Length - 8) { throw new ArgumentOutOfRangeException("startIndex"); }
+            if (value == null) { throw new ArgumentNullException(nameof(value)); }
+            if (startIndex < 0) { throw new ArgumentOutOfRangeException(nameof(startIndex)); }
+            if (startIndex > value.Length - 8) { throw new ArgumentOutOfRangeException(nameof(startIndex)); }
 
             var mantissa = (double)ToInt32Internal(value, startIndex);
             var exponent = (double)ToInt32Internal(value, startIndex + 4);
