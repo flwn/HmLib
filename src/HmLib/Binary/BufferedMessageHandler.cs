@@ -28,9 +28,7 @@ namespace HmLib.Binary
                 }
                 else
                 {
-                    var buffer = await Utils.ReadMessageIntoBuffer(binaryResponse.MessageStream);
-                    var stream = new MemoryStream(buffer.Item1);
-                    var bufferedResponse = new BinaryResponse(stream);
+                    var bufferedResponse = (BinaryResponse) await BinaryMessage.ReadFromStream(binaryResponse.MessageStream);
                     return bufferedResponse;
                 }
 

@@ -9,13 +9,13 @@ namespace HmLib.Binary
     internal class Utils
     {
 
-        public async static Task<Tuple<byte[], int>> ReadMessageIntoBuffer(Stream stream)
+        public async static Task<byte[]> ReadMessageStreamWithLengthVerification(Stream stream)
         {
             var buffer = new byte[1024];
 
             var position = await stream.ReadAsync(buffer, 0, 4);
 
-            if(position != 4)
+            if (position != 4)
             {
                 throw new ProtocolException("Expected 4 bytes");
             }
@@ -38,13 +38,21 @@ namespace HmLib.Binary
 
                 if (position + 4 > buffer.Length)
                 {
+                    //make the array large enough so at least the length of the content fit into the buffer
                     Array.Resize(ref buffer, position + 4);
                 }
             }
 
             result = await ReadContent(stream, result.Item1, result.Item2);
+            buffer = result.Item1;
+            position = result.Item2;
 
-            return result;
+            if (position != buffer.Length)
+            {
+                Array.Resize(ref buffer, position);
+            }
+
+            return buffer;
         }
 
         /// <summary>
@@ -56,31 +64,43 @@ namespace HmLib.Binary
         /// <returns></returns>
         private static async Task<Tuple<byte[], int>> ReadContent(Stream stream, byte[] buffer, int offset)
         {
-            var read = await stream.ReadAsync(buffer, offset, 4);
-            offset += 4;
-            if (read != 4)
+            var read1 = await stream.ReadAsync(buffer, offset, 4);
+            if (read1 != 4)
             {
-                throw new ProtocolException($"Expected 4 bytes, got {read} bytes.");
+                throw new ProtocolException($"Expected 4 bytes, got {read1} bytes.");
             }
 
-            var contentLength = HmBitConverter.ToInt32(buffer, offset - 4);
+            var contentLength = HmBitConverter.ToInt32(buffer, offset);
 
-            if(contentLength + offset > buffer.Length)
+            offset += read1;
+
+            if (contentLength + offset > buffer.Length)
             {
                 Array.Resize(ref buffer, contentLength + offset);
             }
 
-            read = await stream.ReadAsync(buffer, offset, contentLength);
-
-            offset += read;
-
-            if (read != contentLength)
+            var totalRead = 0;
+            do
             {
-                throw new ProtocolException($"Expected content length of {contentLength} bytes, got {read} bytes.");
+                var read2 = await stream.ReadAsync(buffer, offset, contentLength - totalRead);
+                offset += read2;
+                totalRead += read2;
+                if (read2 == 0)
+                {
+                    break;
+                }
+            }
+            while (totalRead < contentLength);
+
+
+            if (totalRead != contentLength)
+            {
+                throw new ProtocolException($"Expected content length of {contentLength} bytes, got {totalRead} bytes.");
             }
 
             return Tuple.Create(buffer, offset);
         }
+
 
         /// <summary>
         /// Tokenize a bin rpc stream for debugging purposes.

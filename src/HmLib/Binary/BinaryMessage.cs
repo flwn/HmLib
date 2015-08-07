@@ -22,12 +22,12 @@ namespace HmLib.Binary
         }
 
 
-        public static async Task<BinaryMessage> ReadFromStream(Stream networkStream)
+        public static async Task<BinaryMessage> ReadFromStream(Stream stream)
         {
-            var readResult = await Utils.ReadMessageIntoBuffer(networkStream);
-            var messageType = readResult.Item1[3];
+            var buffer = await Utils.ReadMessageStreamWithLengthVerification(stream);
+            var messageType = buffer[3];
 
-            var bufferedStream = new MemoryStream(readResult.Item1, 0, readResult.Item2);
+            var bufferedStream = new MemoryStream(buffer);
             switch (messageType)
             {
                 default:
