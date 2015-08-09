@@ -29,12 +29,20 @@ namespace HmLib.Server
 
         public async Task Handle()
         {
+            BinaryResponse binaryResponse;
 
-            var message = (BinaryRequest)await BinaryMessage.ReadFromStream(Stream);
+            try
+            {
+                var message = (BinaryRequest)await BinaryMessage.ReadFromStream(Stream);
 
-            var response = await _requestDispatcher.Dispatch(message);
+                var response = await _requestDispatcher.Dispatch(message);
 
-            var binaryResponse = await response.ReadAsBinary();
+                binaryResponse = await response.ReadAsBinary();
+            }
+            catch (ProtocolException ex)
+            {
+                binaryResponse = BinaryMessage.CreateErrorResponse(ex.Code, ex.Message);
+            }
 
             await binaryResponse.MessageStream.CopyToAsync(Stream);
 

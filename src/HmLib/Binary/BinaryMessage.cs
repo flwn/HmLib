@@ -53,6 +53,32 @@ namespace HmLib.Binary
 
         }
 
+        public static BinaryResponse CreateErrorResponse(int code, string message)
+        {
+            var buffer = new MemoryStream();
+            var writer = new HmBinaryMessageWriter(buffer);
+            writer.BeginMessage(MessageType.Error);
+            writer.BeginContent();
+            writer.BeginStruct(2);
+            writer.BeginItem();
+            writer.WritePropertyName("faultCode");
+            writer.WriteInt32Value(code);
+            writer.EndItem();
+            writer.BeginItem();
+            writer.WritePropertyName("faultMessage");
+            writer.WriteStringValue(message);
+            writer.EndItem();
+            writer.EndStruct();
+            writer.EndContent();
+            writer.EndMessage();
+
+            buffer.Position = 0L;
+            return new BinaryResponse(buffer)
+            {
+                IsErrorResponse = true
+            };
+        }
+
         public Stream MessageStream { get; set; }
 
         public async Task CopyTo(BinaryMessage target, CancellationToken cancellation)

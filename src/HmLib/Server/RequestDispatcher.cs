@@ -3,7 +3,6 @@
 namespace HmLib.Server
 {
     using Abstractions;
-    using Binary;
 
     public class RequestDispatcher
     {
@@ -11,7 +10,7 @@ namespace HmLib.Server
 
         public RequestDispatcher(RequestHandler requestHandler)
         {
-            _requestHandler = new LoggingMessageHandler(new BufferedMessageHandler(requestHandler));
+            _requestHandler = new LoggingMessageHandler(requestHandler);
         }
 
 
