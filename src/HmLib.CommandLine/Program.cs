@@ -90,14 +90,14 @@ namespace HmLib.CommandLine
 
                 var openBlinds = new[] { req1_, req2_, req3_, req4_, req5_ };
 
-                //var response = await proxy.MultiCall(closeBlinds);
+                var response = await proxy.MultiCall(openBlinds);
                 //return;
 
                 var pong = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "TEST-" + DateTime.Now.ToString("hhmm", System.Globalization.CultureInfo.GetCultureInfo("nl-NL")), 0 } });
                 Console.WriteLine(pong);
 
                 Console.ReadLine();
-                var deInit = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "" /* "TEST-" + DateTime.Now.ToString("hhmm")*/, 0 } });
+                var deInit = await client.ExecuteRequest(new Request { Method = "init", Parameters = { "binary://192.168.63.192:6300", "", 0 } });
 
 
                 return;

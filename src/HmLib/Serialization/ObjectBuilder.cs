@@ -100,7 +100,6 @@ namespace HmLib.Serialization
             Debug.EndStruct();
 #endif
             if (!(_currentCollection.Pop() is Dictionary<string, object>)) throw new InvalidOperationException("Expected Dictionary.");
-            _currentWriter.Pop();
         }
 
         public void WriteBase64String(string base64String)
@@ -139,7 +138,7 @@ namespace HmLib.Serialization
 #endif
             var dict = (IDictionary<string, object>)_currentCollection.Peek();
 
-            _currentWriter.Push(x => dict[name] = x);
+            _currentWriter.Push(x => { dict[name] = x; _currentWriter.Pop(); });
         }
 
         public void WriteStringValue(string value)
@@ -152,10 +151,6 @@ namespace HmLib.Serialization
 
         private void WriteInternal(object value)
         {
-            if (_currentWriter.Count == 0)
-            {
-                System.Diagnostics.Debugger.Break();
-            }
             _currentWriter.Peek()(value);
         }
 
